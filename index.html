@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flex 布局</title>
 
-    <!-- 1. 引入 Firebase SDK -->
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
@@ -29,7 +29,10 @@
                         rgb(0 0 0 / 12%) 0px 1px 3px 0px;
         }
         .flex { display: flex; }
-        .baiSe { background-color: #fff; }
+        /* 关键：所有白色背景全部改为透明 */
+        .baiSe {
+            background-color: transparent;
+        }
         .flex1 { flex: 1; }
         .column { flex-direction: column; }
         .mg8 { margin: 8px; }
@@ -37,9 +40,10 @@
         .mgt8 { margin-top: 8px; }
         .daoHang {
             padding: 10px 20px;
-            border-bottom: 1px solid rgb(190, 190, 190);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2); /* 淡白色边框 */
             font-size: 14px;
-            color: #666;
+            color: #fff;                     /* 白色文字 */
+            background: rgba(0, 0, 0, 0.3);  /* 半透明背景增强可读性 */
         }
         @media (max-width:600px) {
             .ceBian { display: none; }
@@ -72,7 +76,7 @@
             to { filter: hue-rotate(360deg); }
         }
 
-        /* 新增：模态框样式 */
+        /* 模态框样式保持不变 */
         .modal {
             display: none;
             position: fixed;
@@ -116,11 +120,17 @@
         .error-msg { color: red; font-size: 13px; margin-bottom: 10px; }
         .success-msg { color: green; font-size: 13px; margin-bottom: 10px; }
         .link-text { font-size: 13px; margin-top: 10px; color: #333; cursor: pointer; text-align: center; }
+
+        /* 侧边栏头像区域文字颜色 */
+        .user-info-text {
+            color: #fff;
+            margin-left: 10px;
+        }
     </style>
 </head>
 <body class="flex">
 
-    <!-- ========== 登录/注册弹窗 ========== -->
+    <!-- 登录/注册弹窗 -->
     <div id="authModal" class="modal">
         <div class="modal-content">
             <h3 id="modalTitle">登录</h3>
@@ -134,17 +144,14 @@
         </div>
     </div>
 
-    <!-- 侧边栏 -->
+    <!-- 侧边栏（透明背景） -->
     <div style="width: 200px;z-index: 2;" class="baiSe yinYing">
-        <!-- 头像栏（动态更新用户名和头像） -->
-        <div style="padding: 10px;align-items: center;justify-content: center;border-bottom: 1px solid #999;" class="flex">
+        <div style="padding: 10px;align-items: center;justify-content: center;border-bottom: 1px solid rgba(255,255,255,0.2);" class="flex">
             <img id="userAvatar" src="https://s21.ax1x.com/2024/09/17/pAKE9fK.png" width="40px" height="40px" alt="" />
-            <div id="userName" style="margin-left: 10px;">小陈</div>
+            <div id="userName" class="user-info-text">小陈</div>
         </div>
-        <!-- 导航栏 -->
         <div class="flex1">
             <div class="daoHang">导航</div>
-            <!-- 原外部链接改为触发登录/注册 -->
             <div class="daoHang" id="authLink" style="cursor:pointer;">登录 / 注册</div>
             <div class="daoHang" id="logoutLink" style="display:none; cursor:pointer;">退出登录</div>
             <div class="daoHang">导航</div>
@@ -155,9 +162,11 @@
 
     <!-- 主区域 -->
     <div class="flex1 flex column">
-        <div style="height: 60px;z-index: 1;" class="baiSe yinYing">
+        <!-- 头部栏（透明背景） -->
+        <div style="height: 60px;z-index: 1; border-bottom: 1px solid rgba(255,255,255,0.2);" class="baiSe yinYing">
             <div><p>小陈的个人网站</p></div>
         </div>
+        <!-- 内容区（所有数据块、列表项、右区均透明） -->
         <div style="overflow: auto" class="neiRong flex1 flex">
             <div style="flex: 3" class="flex column mg8">
                 <div class="flex shuJuQu">
@@ -183,20 +192,20 @@
     </div>
 
     <script>
-        // ========== 2. 初始化 Firebase（替换成你自己的配置） ==========
+        // 初始化 Firebase （已填入你的配置）
         const firebaseConfig = {
             apiKey: "AIzaSyDyhvsQG_UbAcrvFrZKY2iDjI1xs49pw4c",
-  authDomain: "zhuce-31afe.firebaseapp.com",
-  projectId: "zhuce-31afe",
-  storageBucket: "zhuce-31afe.firebasestorage.app",
-  messagingSenderId: "712987001352",
-  appId: "1:712987001352:web:19ac82dcb317dc6daf87bd",
-  measurementId: "G-S95ZVB7YFV"
+            authDomain: "zhuce-31afe.firebaseapp.com",
+            projectId: "zhuce-31afe",
+            storageBucket: "zhuce-31afe.firebasestorage.app",
+            messagingSenderId: "712987001352",
+            appId: "1:712987001352:web:19ac82dcb317dc6daf87bd",
+            measurementId: "G-S95ZVB7YFV"
         };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
 
-        // ========== DOM 元素 ==========
+        // DOM 元素
         const modal = document.getElementById('authModal');
         const modalTitle = document.getElementById('modalTitle');
         const emailInput = document.getElementById('emailInput');
@@ -211,9 +220,8 @@
         const userNameEl = document.getElementById('userName');
         const userAvatar = document.getElementById('userAvatar');
 
-        let isLoginMode = true; // 当前是登录还是注册
+        let isLoginMode = true;
 
-        // 切换登录/注册模式
         function setMode(login) {
             isLoginMode = login;
             if (login) {
@@ -231,28 +239,21 @@
             passwordInput.value = '';
         }
 
-        // 显示/隐藏模态框
         function showModal() {
             modal.style.display = 'flex';
-            setMode(true); // 默认登录模式
+            setMode(true);
         }
         function hideModal() {
             modal.style.display = 'none';
         }
 
-        // 打开弹窗
         authLink.addEventListener('click', showModal);
-
-        // 关闭弹窗
         closeModalBtn.addEventListener('click', hideModal);
         modal.addEventListener('click', (e) => {
             if (e.target === modal) hideModal();
         });
-
-        // 切换登录/注册
         switchMode.addEventListener('click', () => setMode(!isLoginMode));
 
-        // 执行登录或注册
         authActionBtn.addEventListener('click', async () => {
             const email = emailInput.value.trim();
             const password = passwordInput.value;
@@ -272,7 +273,6 @@
                     await auth.createUserWithEmailAndPassword(email, password);
                     successMsg.textContent = '注册成功！';
                 }
-                // 成功后稍作延迟关闭弹窗
                 setTimeout(hideModal, 800);
             } catch (error) {
                 console.error(error);
@@ -288,7 +288,6 @@
             }
         });
 
-        // 退出登录
         logoutLink.addEventListener('click', async () => {
             try {
                 await auth.signOut();
@@ -297,22 +296,16 @@
             }
         });
 
-        // ========== 3. 监听用户状态，更新UI ==========
         auth.onAuthStateChanged((user) => {
             if (user) {
-                // 已登录
                 authLink.style.display = 'none';
                 logoutLink.style.display = 'block';
-                // 显示用户邮箱前缀或名称（也可以自己扩展显示昵称）
                 const displayName = user.email ? user.email.split('@')[0] : '用户';
                 userNameEl.textContent = displayName;
-                // 如果有头像可以把 user.photoURL 赋值给 userAvatar.src
-                // 这里保持默认头像
             } else {
-                // 未登录
                 authLink.style.display = 'block';
                 logoutLink.style.display = 'none';
-                userNameEl.textContent = '小陈'; // 恢复默认
+                userNameEl.textContent = '小陈';
             }
         });
     </script>
