@@ -234,7 +234,6 @@
                     <div id="profileDisplayName" style="font-size:18px; font-weight:bold;">小陈</div>
                     <div id="profileEmail" style="color:#555;"></div>
                 </div>
-                <!-- 额外资料展示 -->
                 <div class="profile-field"><label>年龄</label><span id="profileAge">未设置</span></div>
                 <div class="profile-field"><label>性别</label><span id="profileGender">未设置</span></div>
                 <div class="profile-field"><label>简介</label><span id="profileBio">未设置</span></div>
@@ -244,7 +243,6 @@
 
             <!-- 编辑模式（初始隐藏） -->
             <div id="profileEditMode" style="display:none;">
-                <!-- 头像上传 -->
                 <div class="avatar-upload">
                     <label>头像</label>
                     <input type="file" id="avatarFileInput" accept="image/*">
@@ -344,7 +342,7 @@
         // Firebase 初始化
         const firebaseConfig = {
             apiKey: "AIzaSyDyhvsQG_UbAcrvFrZKY2iDjI1xs49pw4c",
-            authDomain: "zhuce-31afe.firebaseapp.com",
+            authDomain: "api.xiaochen.com",   // ← 改成你的 Worker 域名
             projectId: "zhuce-31afe",
             storageBucket: "zhuce-31afe.firebasestorage.app",
             messagingSenderId: "712987001352",
@@ -500,20 +498,17 @@
         const profileBtn = document.getElementById('profileBtn');
         const closeProfileModalBtn = document.getElementById('closeProfileModalBtn');
 
-        // 查看模式元素
         const profileViewMode = document.getElementById('profileViewMode');
         const profileAvatarView = document.getElementById('profileAvatarView');
         const profileDisplayName = document.getElementById('profileDisplayName');
         const profileEmail = document.getElementById('profileEmail');
         const editProfileBtn = document.getElementById('editProfileBtn');
 
-        // 查看模式额外资料展示
         const profileAge = document.getElementById('profileAge');
         const profileGender = document.getElementById('profileGender');
         const profileBio = document.getElementById('profileBio');
         const profileInterests = document.getElementById('profileInterests');
 
-        // 编辑模式元素
         const profileEditMode = document.getElementById('profileEditMode');
         const avatarFileInput = document.getElementById('avatarFileInput');
         const avatarPreview = document.getElementById('avatarPreview');
@@ -528,12 +523,10 @@
         const profileErrorMsg = document.getElementById('profileErrorMsg');
         const profileSuccessMsg = document.getElementById('profileSuccessMsg');
 
-        // 辅助函数：获取当前用户的额外资料存储键
         function getProfileKey(uid) {
             return 'profile_' + uid;
         }
 
-        // 读取额外资料（年龄、性别、简介、兴趣）
         function loadExtraProfile(uid) {
             const defaultProfile = { age: '', gender: '', bio: '', interests: '' };
             try {
@@ -544,12 +537,10 @@
             }
         }
 
-        // 保存额外资料
         function saveExtraProfile(uid, data) {
             localStorage.setItem(getProfileKey(uid), JSON.stringify(data));
         }
 
-        // 刷新个人资料弹窗内容（查看模式）
         function refreshProfileData() {
             const user = auth.currentUser;
             if (!user) return;
@@ -558,7 +549,6 @@
             const photoURL = user.photoURL || 'https://s21.ax1x.com/2024/09/17/pAKE9fK.png';
             const extra = loadExtraProfile(uid);
 
-            // 更新查看模式
             profileAvatarView.src = photoURL;
             profileDisplayName.textContent = displayName;
             profileEmail.textContent = user.email;
@@ -567,12 +557,10 @@
             profileBio.textContent = extra.bio || '未设置';
             profileInterests.textContent = extra.interests || '未设置';
 
-            // 更新侧边栏
             userNameEl.textContent = displayName;
             userAvatar.src = photoURL;
         }
 
-        // 显示个人资料模态框
         function showProfileModal() {
             if (!auth.currentUser) {
                 alert('请先登录');
@@ -586,29 +574,25 @@
             profileModal.style.display = 'flex';
         }
 
-        // 隐藏模态框
         function hideProfileModal() {
             profileModal.style.display = 'none';
             profileViewMode.style.display = 'block';
             profileEditMode.style.display = 'none';
         }
 
-        // 切换到编辑模式
         editProfileBtn.addEventListener('click', () => {
             const user = auth.currentUser;
             if (!user) return;
             const uid = user.uid;
             const extra = loadExtraProfile(uid);
 
-            // 填充编辑表单
             displayNameInput.value = user.displayName || '';
             ageInput.value = extra.age || '';
             genderInput.value = extra.gender || '';
             bioInput.value = extra.bio || '';
             interestsInput.value = extra.interests || '';
-            // 头像预览设置为当前头像
             avatarPreview.src = user.photoURL || 'https://s21.ax1x.com/2024/09/17/pAKE9fK.png';
-            avatarFileInput.value = ''; // 清空文件选择
+            avatarFileInput.value = '';
 
             profileViewMode.style.display = 'none';
             profileEditMode.style.display = 'block';
@@ -616,7 +600,6 @@
             profileSuccessMsg.textContent = '';
         });
 
-        // 头像文件选择后预览
         avatarFileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
@@ -628,7 +611,6 @@
             }
         });
 
-        // 取消编辑
         cancelEditBtn.addEventListener('click', () => {
             profileViewMode.style.display = 'block';
             profileEditMode.style.display = 'none';
@@ -636,24 +618,50 @@
             profileSuccessMsg.textContent = '';
         });
 
-        // 保存资料
+        // 头像上传至 GitHub（通过 Worker 中转）
         saveProfileBtn.addEventListener('click', async () => {
             const user = auth.currentUser;
             if (!user) return;
             const uid = user.uid;
 
-            // 处理头像上传
-            let newPhotoURL = user.photoURL; // 默认保留原头像
+            let newPhotoURL = user.photoURL;
             const file = avatarFileInput.files[0];
             if (file) {
-                // 将图片转为 base64
-                const base64 = await new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(file);
-                });
-                newPhotoURL = base64;
+                try {
+                    saveProfileBtn.textContent = '上传中...';
+                    saveProfileBtn.disabled = true;
+
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('uid', uid);
+
+                    // 使用 Worker 域名（与 authDomain 相同）
+                    const workerBase = 'https://api.xiaochen.com'; // ← 改成你的 Worker 域名
+                    const res = await fetch(`${workerBase}/upload-github`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const result = await res.json();
+
+                    if (result.success) {
+                        newPhotoURL = result.url;
+                        profileSuccessMsg.textContent = '头像上传成功！';
+                    } else {
+                        profileErrorMsg.textContent = '头像上传失败：' + (result.error || '未知错误');
+                        saveProfileBtn.textContent = '保存';
+                        saveProfileBtn.disabled = false;
+                        return;
+                    }
+                } catch (error) {
+                    console.error(error);
+                    profileErrorMsg.textContent = '头像上传网络错误';
+                    saveProfileBtn.textContent = '保存';
+                    saveProfileBtn.disabled = false;
+                    return;
+                } finally {
+                    saveProfileBtn.textContent = '保存';
+                    saveProfileBtn.disabled = false;
+                }
             }
 
             const newDisplayName = displayNameInput.value.trim() || user.displayName;
@@ -663,32 +671,19 @@
             const newInterests = interestsInput.value.trim();
 
             try {
-                // 更新 Firebase Auth 基本信息
-                await user.updateProfile({
-                    displayName: newDisplayName,
-                    photoURL: newPhotoURL
-                });
-
-                // 保存额外资料到 localStorage
-                saveExtraProfile(uid, {
-                    age: newAge,
-                    gender: newGender,
-                    bio: newBio,
-                    interests: newInterests
-                });
-
+                await user.updateProfile({ displayName: newDisplayName, photoURL: newPhotoURL });
+                saveExtraProfile(uid, { age: newAge, gender: newGender, bio: newBio, interests: newInterests });
                 refreshProfileData();
                 profileSuccessMsg.textContent = '资料更新成功！';
                 profileViewMode.style.display = 'block';
                 profileEditMode.style.display = 'none';
                 setTimeout(() => { profileSuccessMsg.textContent = ''; }, 2000);
             } catch (error) {
-                console.error('更新资料失败：', error);
-                profileErrorMsg.textContent = '更新失败：' + error.message;
+                console.error(error);
+                profileErrorMsg.textContent = '更新资料失败：' + error.message;
             }
         });
 
-        // 事件绑定
         profileBtn.addEventListener('click', showProfileModal);
         closeProfileModalBtn.addEventListener('click', hideProfileModal);
         profileModal.addEventListener('click', (e) => {
@@ -701,7 +696,6 @@
                 authLink.style.display = 'none';
                 logoutLink.style.display = 'block';
                 profileBtn.style.display = 'block';
-                // 更新侧边栏显示
                 const displayName = user.displayName || user.email.split('@')[0];
                 userNameEl.textContent = displayName;
                 userAvatar.src = user.photoURL || 'https://s21.ax1x.com/2024/09/17/pAKE9fK.png';
