@@ -6,7 +6,7 @@
 // ========== 配置部分 ==========
 const CONFIG = {
   // GitHub 配置
-  GITHUB_TOKEN: 'your_github_token_here',  // ← 替换为你的 GitHub Personal Access Token
+  GITHUB_TOKEN: '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',  // ← 替换为你的 GitHub Personal Access Token
   GITHUB_OWNER: '34619',                   // ← GitHub 用户名
   GITHUB_REPO: 'xiaochen-noe',             // ← 仓库名
   GITHUB_BRANCH: 'main',                   // ← 分支名
