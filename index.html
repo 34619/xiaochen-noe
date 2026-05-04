@@ -1,14 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flex 布局</title>
+
+    <!-- 1. 引入 Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
     <style>
         * {
-            /* 初始化 */
             margin: 0;
             padding: 0;
         }
@@ -20,157 +23,150 @@
             background-color: #eee;
             background: url(https://s21.ax1x.com/2024/09/17/pAKEpY6.jpg);
         }
-
         .yinYing {
             box-shadow: rgb(0 0 0 / 20%) 0px 2px 1px 1px,
                         rgb(0 0 0 / 14%) 0px 1px 1px 0px, 
                         rgb(0 0 0 / 12%) 0px 1px 3px 0px;
         }
-
-        .flex {
-            display: flex;
-        }
-
-        .baiSe {
-            background-color: #fff;   /* ✅ 修正1：补全颜色值 */
-        }
-
-        .flex1 {
-            flex: 1;
-        }
-
-        .column {
-            flex-direction: column;
-        }
-
-        .mg8 {
-            margin: 8px;
-        }
-
-        .mgr8 {
-            margin-right: 8px;
-        }
-
-        .mgt8 {
-            margin-top: 8px;
-        }
-
+        .flex { display: flex; }
+        .baiSe { background-color: #fff; }
+        .flex1 { flex: 1; }
+        .column { flex-direction: column; }
+        .mg8 { margin: 8px; }
+        .mgr8 { margin-right: 8px; }
+        .mgt8 { margin-top: 8px; }
         .daoHang {
             padding: 10px 20px;
             border-bottom: 1px solid rgb(190, 190, 190);
             font-size: 14px;
             color: #666;
         }
-
-        /* 当屏幕宽度小于600px时要改变的css */
         @media (max-width:600px) {
-            .ceBian {
-                display: none;
-            }
-            .neiRong {
-                flex-direction: column;
-            }
-            .shuJuQu {
-                flex-direction: column;
-            }
-            .youQu {
-                margin-left: 8px;
-            }
-            .shuJu {
-                margin: 0 0 8px;
-                flex: auto;
-            }
+            .ceBian { display: none; }
+            .neiRong { flex-direction: column; }
+            .shuJuQu { flex-direction: column; }
+            .youQu { margin-left: 8px; }
+            .shuJu { margin: 0 0 8px; flex: auto; }
         }
-
-        .neiRong::-webkit-scrollbar {
-            display: none;
-        }
-
+        .neiRong::-webkit-scrollbar { display: none; }
         .container {
-            /* 投影效果 */
             -webkit-box-reflect: below 1px linear-gradient(transparent, rgba(0,0,0,0.2));
         }
-
         p {
             color: #fff;
             font-size: 40px;
-            /* 字间距 */
-            letter-spacing: 2px;        /* ✅ 修正2：补全数值 */
-            /* 转大写 */
+            letter-spacing: 2px;
             text-transform: uppercase;
             text-align: center;
-            line-height: 1.5;           /* ✅ 修正3：补全数值，可根据需要调整 */
+            line-height: 1.5;
             outline: none;
-            /* 自定义属性--c，可通过var函数对其调用 */
             --c: lightseagreen;
-            /* 调用自定义属性--c，设置文字阴影（发光效果） */
             text-shadow: 0 0 10px var(--c),
                          0 0 20px var(--c),
                          0 0 40px var(--c),
                          0 0 80px var(--c),
                          0 0 160px var(--c);
-            /* 执行动画：动画名 时长 线性的 无限次播放 */
             animation: animate 5s linear infinite;
         }
-
-        /* 定义动画 */
         @keyframes animate {
-            to {
-                /* 色相旋转滤镜（设置度数可改变颜色） */
-                filter: hue-rotate(360deg);
-            }
+            to { filter: hue-rotate(360deg); }
         }
+
+        /* 新增：模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 999;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 360px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .modal-content h3 { margin-bottom: 20px; }
+        .modal-content input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .modal-content button {
+            width: 100%;
+            padding: 10px;
+            background: lightseagreen;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 6px;
+        }
+        .modal-content button.secondary {
+            background: #666;
+        }
+        .error-msg { color: red; font-size: 13px; margin-bottom: 10px; }
+        .success-msg { color: green; font-size: 13px; margin-bottom: 10px; }
+        .link-text { font-size: 13px; margin-top: 10px; color: #333; cursor: pointer; text-align: center; }
     </style>
 </head>
-
 <body class="flex">
+
+    <!-- ========== 登录/注册弹窗 ========== -->
+    <div id="authModal" class="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">登录</h3>
+            <div id="errorMsg" class="error-msg"></div>
+            <div id="successMsg" class="success-msg"></div>
+            <input type="email" id="emailInput" placeholder="邮箱">
+            <input type="password" id="passwordInput" placeholder="密码">
+            <button id="authActionBtn">登录</button>
+            <div class="link-text" id="switchMode">没有账号？立即注册</div>
+            <button class="secondary" id="closeModalBtn">关闭</button>
+        </div>
+    </div>
+
     <!-- 侧边栏 -->
     <div style="width: 200px;z-index: 2;" class="baiSe yinYing">
-        <!-- 头像栏 -->
-        <div style="padding: 10px;align-items: center;justify-content: center;border-bottom: 1px solid #999;"
-             class="flex">
-            <img src="https://s21.ax1x.com/2024/09/17/pAKE9fK.png" width="40px" height="40px" alt="" />
-            <div style="margin-left: 10px;">小陈</div>
+        <!-- 头像栏（动态更新用户名和头像） -->
+        <div style="padding: 10px;align-items: center;justify-content: center;border-bottom: 1px solid #999;" class="flex">
+            <img id="userAvatar" src="https://s21.ax1x.com/2024/09/17/pAKE9fK.png" width="40px" height="40px" alt="" />
+            <div id="userName" style="margin-left: 10px;">小陈</div>
         </div>
         <!-- 导航栏 -->
         <div class="flex1">
-            <div class="daoHang">
-                导航
-            </div>
-            <div class="daoHang">
-                <a href="https://34619.github.io/xiaochen2.noe/" target="_blank">前往注册</a>
-            </div>
+            <div class="daoHang">导航</div>
+            <!-- 原外部链接改为触发登录/注册 -->
+            <div class="daoHang" id="authLink" style="cursor:pointer;">登录 / 注册</div>
+            <div class="daoHang" id="logoutLink" style="display:none; cursor:pointer;">退出登录</div>
             <div class="daoHang">导航</div>
             <div class="daoHang">导航</div>
             <div class="daoHang">导航</div>
         </div>
     </div>
+
     <!-- 主区域 -->
     <div class="flex1 flex column">
-        <!-- 头部栏 -->
         <div style="height: 60px;z-index: 1;" class="baiSe yinYing">
-            <div>
-                <p>小陈的个人网站</p>
-            </div>
+            <div><p>小陈的个人网站</p></div>
         </div>
-        <!-- 内容区 -->
         <div style="overflow: auto" class="neiRong flex1 flex">
-            <!-- 左区 -->
             <div style="flex: 3" class="flex column mg8">
-                <!-- 数据区 -->
                 <div class="flex shuJuQu">
-                    <!--数据块 -->
                     <div style="height: 100px" class="shuJu flex1 baiSe mgr8 yinYing"></div>
-                    <!--数据块 -->
                     <div style="height: 100px" class="shuJu flex1 baiSe mgr8 yinYing"></div>
-                    <!--数据块 -->
                     <div style="height: 100px" class="shuJu flex1 baiSe mgr8 yinYing"></div>
-                    <!--数据块 -->
                     <div style="height: 100px" class="shuJu flex1 baiSe yinYing"></div>
                 </div>
-                <!-- 列表区 -->
                 <div class="flex column">
-                    <!-- 列表项 -->
                     <div style="height: 160px" class="baiSe mgt8 yinYing"></div>
                     <div style="height: 160px" class="baiSe mgt8 yinYing"></div>
                     <div style="height: 160px" class="baiSe mgt8 yinYing"></div>
@@ -179,15 +175,145 @@
                     <div style="height: 160px" class="baiSe mgt8 yinYing"></div>
                 </div>
             </div>
-            <!-- 右区 -->
-            <!-- ✅ 修正4：Flex → flex（类名大小写错误），修正5：mgt8y → mgt8 -->
             <div style="flex: 1" class="youQu flex column mgr8 mgt8">
-                <!-- 提示区 -->
                 <div style="height: 150px" class="baiSe yinYing"></div>
-                <!-- 消息区 -->
                 <div style="height: 300px" class="baiSe mgt8 yinYing"></div>
             </div>
         </div>
     </div>
+
+    <script>
+        // ========== 2. 初始化 Firebase（替换成你自己的配置） ==========
+        const firebaseConfig = {
+            apiKey: "AIzaSyXXXXXXXXXXXXXXXXXXXXXXX",
+            authDomain: "your-project.firebaseapp.com",
+            projectId: "your-project-id",
+            storageBucket: "your-project.appspot.com",
+            messagingSenderId: "000000000000",
+            appId: "1:000000000000:web:xxxxxxxxxxxxxxxx"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        // ========== DOM 元素 ==========
+        const modal = document.getElementById('authModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const emailInput = document.getElementById('emailInput');
+        const passwordInput = document.getElementById('passwordInput');
+        const authActionBtn = document.getElementById('authActionBtn');
+        const switchMode = document.getElementById('switchMode');
+        const errorMsg = document.getElementById('errorMsg');
+        const successMsg = document.getElementById('successMsg');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const authLink = document.getElementById('authLink');
+        const logoutLink = document.getElementById('logoutLink');
+        const userNameEl = document.getElementById('userName');
+        const userAvatar = document.getElementById('userAvatar');
+
+        let isLoginMode = true; // 当前是登录还是注册
+
+        // 切换登录/注册模式
+        function setMode(login) {
+            isLoginMode = login;
+            if (login) {
+                modalTitle.textContent = '登录';
+                authActionBtn.textContent = '登录';
+                switchMode.textContent = '没有账号？立即注册';
+            } else {
+                modalTitle.textContent = '注册';
+                authActionBtn.textContent = '注册';
+                switchMode.textContent = '已有账号？去登录';
+            }
+            errorMsg.textContent = '';
+            successMsg.textContent = '';
+            emailInput.value = '';
+            passwordInput.value = '';
+        }
+
+        // 显示/隐藏模态框
+        function showModal() {
+            modal.style.display = 'flex';
+            setMode(true); // 默认登录模式
+        }
+        function hideModal() {
+            modal.style.display = 'none';
+        }
+
+        // 打开弹窗
+        authLink.addEventListener('click', showModal);
+
+        // 关闭弹窗
+        closeModalBtn.addEventListener('click', hideModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) hideModal();
+        });
+
+        // 切换登录/注册
+        switchMode.addEventListener('click', () => setMode(!isLoginMode));
+
+        // 执行登录或注册
+        authActionBtn.addEventListener('click', async () => {
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+            errorMsg.textContent = '';
+            successMsg.textContent = '';
+
+            if (!email || !password) {
+                errorMsg.textContent = '请填写邮箱和密码';
+                return;
+            }
+
+            try {
+                if (isLoginMode) {
+                    await auth.signInWithEmailAndPassword(email, password);
+                    successMsg.textContent = '登录成功！';
+                } else {
+                    await auth.createUserWithEmailAndPassword(email, password);
+                    successMsg.textContent = '注册成功！';
+                }
+                // 成功后稍作延迟关闭弹窗
+                setTimeout(hideModal, 800);
+            } catch (error) {
+                console.error(error);
+                if (error.code === 'auth/email-already-in-use') {
+                    errorMsg.textContent = '该邮箱已被注册';
+                } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+                    errorMsg.textContent = '邮箱或密码错误';
+                } else if (error.code === 'auth/weak-password') {
+                    errorMsg.textContent = '密码应至少6位';
+                } else {
+                    errorMsg.textContent = error.message;
+                }
+            }
+        });
+
+        // 退出登录
+        logoutLink.addEventListener('click', async () => {
+            try {
+                await auth.signOut();
+            } catch (error) {
+                console.error('退出失败', error);
+            }
+        });
+
+        // ========== 3. 监听用户状态，更新UI ==========
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // 已登录
+                authLink.style.display = 'none';
+                logoutLink.style.display = 'block';
+                // 显示用户邮箱前缀或名称（也可以自己扩展显示昵称）
+                const displayName = user.email ? user.email.split('@')[0] : '用户';
+                userNameEl.textContent = displayName;
+                // 如果有头像可以把 user.photoURL 赋值给 userAvatar.src
+                // 这里保持默认头像
+            } else {
+                // 未登录
+                authLink.style.display = 'block';
+                logoutLink.style.display = 'none';
+                userNameEl.textContent = '小陈'; // 恢复默认
+            }
+        });
+    </script>
 </body>
 </html>
