@@ -102,14 +102,19 @@
             width: 90%;
             max-width: 400px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            max-height: 90vh;
+            overflow-y: auto;
         }
         .modal-content h3 { margin-bottom: 20px; }
-        .modal-content input {
+        .modal-content input,
+        .modal-content textarea,
+        .modal-content select {
             width: 100%;
             padding: 10px;
             margin-bottom: 12px;
             border: 1px solid #ccc;
             border-radius: 4px;
+            font-family: inherit;
         }
         .modal-content button {
             width: 100%;
@@ -155,14 +160,14 @@
             font-weight: bold;
             min-width: 60px;
         }
-        .profile-field span, .profile-field input {
+        .profile-field span, .profile-field input, .profile-field textarea, .profile-field select {
             flex: 1;
             padding: 8px;
             border: 1px solid #ccc;
             border-radius: 4px;
             background: #f9f9f9;
         }
-        .profile-field input {
+        .profile-field input, .profile-field textarea, .profile-field select {
             background: white;
         }
         .edit-controls {
@@ -172,6 +177,19 @@
         }
         .edit-controls button {
             flex: 1;
+        }
+        .avatar-upload {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .avatar-upload img.preview {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid #ccc;
         }
 
         .user-info-text {
@@ -202,7 +220,7 @@
         </div>
     </div>
 
-    <!-- 个人资料查看/编辑弹窗（新增） -->
+    <!-- 个人资料查看/编辑弹窗 -->
     <div id="profileModal" class="modal">
         <div class="modal-content">
             <h3>个人资料</h3>
@@ -216,18 +234,49 @@
                     <div id="profileDisplayName" style="font-size:18px; font-weight:bold;">小陈</div>
                     <div id="profileEmail" style="color:#555;"></div>
                 </div>
+                <!-- 额外资料展示 -->
+                <div class="profile-field"><label>年龄</label><span id="profileAge">未设置</span></div>
+                <div class="profile-field"><label>性别</label><span id="profileGender">未设置</span></div>
+                <div class="profile-field"><label>简介</label><span id="profileBio">未设置</span></div>
+                <div class="profile-field"><label>兴趣</label><span id="profileInterests">未设置</span></div>
                 <button id="editProfileBtn">编辑资料</button>
             </div>
 
             <!-- 编辑模式（初始隐藏） -->
             <div id="profileEditMode" style="display:none;">
-                <div class="profile-field">
-                    <label>头像URL</label>
-                    <input type="text" id="avatarUrlInput" placeholder="输入头像链接">
+                <!-- 头像上传 -->
+                <div class="avatar-upload">
+                    <label>头像</label>
+                    <input type="file" id="avatarFileInput" accept="image/*">
+                </div>
+                <div class="avatar-upload">
+                    <span></span>
+                    <img id="avatarPreview" class="preview" src="https://s21.ax1x.com/2024/09/17/pAKE9fK.png" alt="预览">
                 </div>
                 <div class="profile-field">
                     <label>昵称</label>
                     <input type="text" id="displayNameInput" placeholder="输入显示名称">
+                </div>
+                <div class="profile-field">
+                    <label>年龄</label>
+                    <input type="number" id="ageInput" placeholder="年龄" min="1" max="120">
+                </div>
+                <div class="profile-field">
+                    <label>性别</label>
+                    <select id="genderInput">
+                        <option value="">请选择</option>
+                        <option value="男">男</option>
+                        <option value="女">女</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+                <div class="profile-field">
+                    <label>简介</label>
+                    <textarea id="bioInput" placeholder="简单介绍一下自己" rows="3"></textarea>
+                </div>
+                <div class="profile-field">
+                    <label>兴趣</label>
+                    <input type="text" id="interestsInput" placeholder="例如：阅读,旅行,摄影">
                 </div>
                 <div class="edit-controls">
                     <button id="saveProfileBtn">保存</button>
@@ -239,15 +288,13 @@
         </div>
     </div>
 
-    <!-- 侧边栏（透明背景） -->
+    <!-- 侧边栏 -->
     <div style="width: 200px;z-index: 2;" class="baiSe yinYing">
-        <!-- 用户信息区域 -->
         <div style="padding: 10px;align-items: center;justify-content: center;border-bottom: 1px solid rgba(255,255,255,0.2);" class="flex column">
             <div class="flex" style="align-items:center; width:100%;">
                 <img id="userAvatar" src="https://s21.ax1x.com/2024/09/17/pAKE9fK.png" width="40px" height="40px" alt="" />
                 <div id="userName" class="user-info-text">小陈</div>
             </div>
-            <!-- 个人资料按钮 -->
             <div id="profileBtn" class="daoHang button-like" style="width:100%; text-align:center; border-bottom:none; margin-top:6px; display:none;">
                 个人资料
             </div>
@@ -264,13 +311,11 @@
 
     <!-- 主区域 -->
     <div class="flex1 flex column">
-        <!-- 头部栏（透明背景） -->
         <div style="height: 60px;z-index: 1; border-bottom: 1px solid rgba(255,255,255,0.2);" class="baiSe yinYing">
             <div class="header-title">
                 <p class="site-title">小陈的个人网站</p>
             </div>
         </div>
-        <!-- 内容区 -->
         <div style="overflow: auto" class="neiRong flex1 flex">
             <div style="flex: 3" class="flex column mg8">
                 <div class="flex shuJuQu">
@@ -309,7 +354,7 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
 
-        // ---------- 原有登录/注册/找回密码逻辑 ----------
+        // ---------- 登录/注册/找回密码 ----------
         const authModal = document.getElementById('authModal');
         const modalTitle = document.getElementById('modalTitle');
         const emailInput = document.getElementById('emailInput');
@@ -450,7 +495,7 @@
             }
         });
 
-        // ---------- 个人资料模态框逻辑 ----------
+        // ---------- 个人资料模态框 ----------
         const profileModal = document.getElementById('profileModal');
         const profileBtn = document.getElementById('profileBtn');
         const closeProfileModalBtn = document.getElementById('closeProfileModalBtn');
@@ -462,29 +507,69 @@
         const profileEmail = document.getElementById('profileEmail');
         const editProfileBtn = document.getElementById('editProfileBtn');
 
+        // 查看模式额外资料展示
+        const profileAge = document.getElementById('profileAge');
+        const profileGender = document.getElementById('profileGender');
+        const profileBio = document.getElementById('profileBio');
+        const profileInterests = document.getElementById('profileInterests');
+
         // 编辑模式元素
         const profileEditMode = document.getElementById('profileEditMode');
-        const avatarUrlInput = document.getElementById('avatarUrlInput');
+        const avatarFileInput = document.getElementById('avatarFileInput');
+        const avatarPreview = document.getElementById('avatarPreview');
         const displayNameInput = document.getElementById('displayNameInput');
+        const ageInput = document.getElementById('ageInput');
+        const genderInput = document.getElementById('genderInput');
+        const bioInput = document.getElementById('bioInput');
+        const interestsInput = document.getElementById('interestsInput');
         const saveProfileBtn = document.getElementById('saveProfileBtn');
         const cancelEditBtn = document.getElementById('cancelEditBtn');
 
         const profileErrorMsg = document.getElementById('profileErrorMsg');
         const profileSuccessMsg = document.getElementById('profileSuccessMsg');
 
-        // 根据当前用户刷新个人资料模态框内容
+        // 辅助函数：获取当前用户的额外资料存储键
+        function getProfileKey(uid) {
+            return 'profile_' + uid;
+        }
+
+        // 读取额外资料（年龄、性别、简介、兴趣）
+        function loadExtraProfile(uid) {
+            const defaultProfile = { age: '', gender: '', bio: '', interests: '' };
+            try {
+                const stored = localStorage.getItem(getProfileKey(uid));
+                return stored ? JSON.parse(stored) : defaultProfile;
+            } catch (e) {
+                return defaultProfile;
+            }
+        }
+
+        // 保存额外资料
+        function saveExtraProfile(uid, data) {
+            localStorage.setItem(getProfileKey(uid), JSON.stringify(data));
+        }
+
+        // 刷新个人资料弹窗内容（查看模式）
         function refreshProfileData() {
             const user = auth.currentUser;
-            if (user) {
-                const displayName = user.displayName || user.email.split('@')[0];
-                const photoURL = user.photoURL || 'https://s21.ax1x.com/2024/09/17/pAKE9fK.png';
-                profileAvatarView.src = photoURL;
-                profileDisplayName.textContent = displayName;
-                profileEmail.textContent = user.email;
-                // 侧边栏同步更新
-                userNameEl.textContent = displayName;
-                userAvatar.src = photoURL;
-            }
+            if (!user) return;
+            const uid = user.uid;
+            const displayName = user.displayName || user.email.split('@')[0];
+            const photoURL = user.photoURL || 'https://s21.ax1x.com/2024/09/17/pAKE9fK.png';
+            const extra = loadExtraProfile(uid);
+
+            // 更新查看模式
+            profileAvatarView.src = photoURL;
+            profileDisplayName.textContent = displayName;
+            profileEmail.textContent = user.email;
+            profileAge.textContent = extra.age || '未设置';
+            profileGender.textContent = extra.gender || '未设置';
+            profileBio.textContent = extra.bio || '未设置';
+            profileInterests.textContent = extra.interests || '未设置';
+
+            // 更新侧边栏
+            userNameEl.textContent = displayName;
+            userAvatar.src = photoURL;
         }
 
         // 显示个人资料模态框
@@ -494,7 +579,6 @@
                 return;
             }
             refreshProfileData();
-            // 默认进入查看模式
             profileViewMode.style.display = 'block';
             profileEditMode.style.display = 'none';
             profileErrorMsg.textContent = '';
@@ -502,10 +586,9 @@
             profileModal.style.display = 'flex';
         }
 
-        // 隐藏个人资料模态框
+        // 隐藏模态框
         function hideProfileModal() {
             profileModal.style.display = 'none';
-            // 退出编辑状态
             profileViewMode.style.display = 'block';
             profileEditMode.style.display = 'none';
         }
@@ -514,13 +597,35 @@
         editProfileBtn.addEventListener('click', () => {
             const user = auth.currentUser;
             if (!user) return;
-            // 将当前值填入输入框
-            avatarUrlInput.value = user.photoURL || '';
+            const uid = user.uid;
+            const extra = loadExtraProfile(uid);
+
+            // 填充编辑表单
             displayNameInput.value = user.displayName || '';
+            ageInput.value = extra.age || '';
+            genderInput.value = extra.gender || '';
+            bioInput.value = extra.bio || '';
+            interestsInput.value = extra.interests || '';
+            // 头像预览设置为当前头像
+            avatarPreview.src = user.photoURL || 'https://s21.ax1x.com/2024/09/17/pAKE9fK.png';
+            avatarFileInput.value = ''; // 清空文件选择
+
             profileViewMode.style.display = 'none';
             profileEditMode.style.display = 'block';
             profileErrorMsg.textContent = '';
             profileSuccessMsg.textContent = '';
+        });
+
+        // 头像文件选择后预览
+        avatarFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    avatarPreview.src = ev.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
         });
 
         // 取消编辑
@@ -535,21 +640,47 @@
         saveProfileBtn.addEventListener('click', async () => {
             const user = auth.currentUser;
             if (!user) return;
+            const uid = user.uid;
+
+            // 处理头像上传
+            let newPhotoURL = user.photoURL; // 默认保留原头像
+            const file = avatarFileInput.files[0];
+            if (file) {
+                // 将图片转为 base64
+                const base64 = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+                newPhotoURL = base64;
+            }
+
             const newDisplayName = displayNameInput.value.trim() || user.displayName;
-            const newPhotoURL = avatarUrlInput.value.trim() || user.photoURL;
+            const newAge = ageInput.value.trim();
+            const newGender = genderInput.value;
+            const newBio = bioInput.value.trim();
+            const newInterests = interestsInput.value.trim();
 
             try {
+                // 更新 Firebase Auth 基本信息
                 await user.updateProfile({
                     displayName: newDisplayName,
                     photoURL: newPhotoURL
                 });
-                // 刷新展示内容
+
+                // 保存额外资料到 localStorage
+                saveExtraProfile(uid, {
+                    age: newAge,
+                    gender: newGender,
+                    bio: newBio,
+                    interests: newInterests
+                });
+
                 refreshProfileData();
                 profileSuccessMsg.textContent = '资料更新成功！';
-                // 切回查看模式
                 profileViewMode.style.display = 'block';
                 profileEditMode.style.display = 'none';
-                // 清空成功消息在几秒后
                 setTimeout(() => { profileSuccessMsg.textContent = ''; }, 2000);
             } catch (error) {
                 console.error('更新资料失败：', error);
@@ -567,19 +698,17 @@
         // ---------- 全局用户状态监听 ----------
         auth.onAuthStateChanged((user) => {
             if (user) {
-                // 登录状态
                 authLink.style.display = 'none';
                 logoutLink.style.display = 'block';
-                profileBtn.style.display = 'block';  // 显示个人资料按钮
+                profileBtn.style.display = 'block';
                 // 更新侧边栏显示
                 const displayName = user.displayName || user.email.split('@')[0];
                 userNameEl.textContent = displayName;
                 userAvatar.src = user.photoURL || 'https://s21.ax1x.com/2024/09/17/pAKE9fK.png';
             } else {
-                // 未登录
                 authLink.style.display = 'block';
                 logoutLink.style.display = 'none';
-                profileBtn.style.display = 'none';  // 隐藏个人资料按钮
+                profileBtn.style.display = 'none';
                 userNameEl.textContent = '小陈';
                 userAvatar.src = 'https://s21.ax1x.com/2024/09/17/pAKE9fK.png';
             }
