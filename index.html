@@ -14,6 +14,7 @@
         * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
         }
         body {
             margin: 0;
@@ -21,7 +22,7 @@
             display: flex;
             justify-content: center;
             background-color: #eee;
-            background: url(https://s21.ax1x.com/2024/09/17/pAKEpY6.jpg);
+            background: url(https://s21.ax1x.com/2024/09/17/pAKEpY6.jpg) no-repeat center/cover fixed;
         }
         .yinYing {
             box-shadow: rgb(0 0 0 / 20%) 0px 2px 1px 1px,
@@ -29,7 +30,6 @@
                         rgb(0 0 0 / 12%) 0px 1px 3px 0px;
         }
         .flex { display: flex; }
-        /* 关键：所有白色背景全部改为透明 */
         .baiSe {
             background-color: transparent;
         }
@@ -40,22 +40,46 @@
         .mgt8 { margin-top: 8px; }
         .daoHang {
             padding: 10px 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2); /* 淡白色边框 */
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
             font-size: 14px;
-            color: #fff;                     /* 白色文字 */
-            background: rgba(0, 0, 0, 0.3);  /* 半透明背景增强可读性 */
+            color: #fff;
+            background: rgba(0, 0, 0, 0.3);
         }
-        @media (max-width:600px) {
-            .ceBian { display: none; }
-            .neiRong { flex-direction: column; }
-            .shuJuQu { flex-direction: column; }
-            .youQu { margin-left: 8px; }
-            .shuJu { margin: 0 0 8px; flex: auto; }
+        /* 手机端响应式 */
+        @media (max-width: 768px) {
+            .ceBian {
+                display: none !important;
+            }
+            .neiRong {
+                flex-direction: column;
+            }
+            .shuJuQu {
+                flex-direction: column;
+            }
+            .shuJu {
+                margin: 0 0 8px !important;
+                flex: auto;
+            }
+            .youQu {
+                margin-left: 8px !important;
+                margin-right: 8px !important;
+            }
+            /* 头部标题变小 */
+            p {
+                font-size: 24px !important;
+                letter-spacing: 1px;
+            }
+            /* 头部栏高度自适应 */
+            .header-bar {
+                height: auto !important;
+                padding: 15px 0;
+            }
+            /* 左区去掉右边距 */
+            .left-area {
+                margin-right: 0 !important;
+            }
         }
         .neiRong::-webkit-scrollbar { display: none; }
-        .container {
-            -webkit-box-reflect: below 1px linear-gradient(transparent, rgba(0,0,0,0.2));
-        }
         p {
             color: #fff;
             font-size: 40px;
@@ -121,7 +145,6 @@
         .success-msg { color: green; font-size: 13px; margin-bottom: 10px; }
         .link-text { font-size: 13px; margin-top: 10px; color: #333; cursor: pointer; text-align: center; }
 
-        /* 侧边栏头像区域文字颜色 */
         .user-info-text {
             color: #fff;
             margin-left: 10px;
@@ -144,8 +167,8 @@
         </div>
     </div>
 
-    <!-- 侧边栏（透明背景） -->
-    <div style="width: 200px;z-index: 2;" class="baiSe yinYing">
+    <!-- 侧边栏（增加 ceBian 类，手机端隐藏） -->
+    <div class="ceBian baiSe yinYing" style="width: 200px;z-index: 2;">
         <div style="padding: 10px;align-items: center;justify-content: center;border-bottom: 1px solid rgba(255,255,255,0.2);" class="flex">
             <img id="userAvatar" src="https://s21.ax1x.com/2024/09/17/pAKE9fK.png" width="40px" height="40px" alt="" />
             <div id="userName" class="user-info-text">小陈</div>
@@ -162,13 +185,14 @@
 
     <!-- 主区域 -->
     <div class="flex1 flex column">
-        <!-- 头部栏（透明背景） -->
-        <div style="height: 60px;z-index: 1; border-bottom: 1px solid rgba(255,255,255,0.2);" class="baiSe yinYing">
+        <!-- 头部栏（增加 header-bar 类方便控制高度） -->
+        <div class="baiSe yinYing header-bar" style="height: 60px;z-index: 1; border-bottom: 1px solid rgba(255,255,255,0.2);">
             <div><p>小陈的个人网站</p></div>
         </div>
-        <!-- 内容区（所有数据块、列表项、右区均透明） -->
+        <!-- 内容区 -->
         <div style="overflow: auto" class="neiRong flex1 flex">
-            <div style="flex: 3" class="flex column mg8">
+            <!-- 左区（增加 left-area 类控制边距） -->
+            <div class="flex column mg8 left-area" style="flex: 3">
                 <div class="flex shuJuQu">
                     <div style="height: 100px" class="shuJu flex1 baiSe mgr8 yinYing"></div>
                     <div style="height: 100px" class="shuJu flex1 baiSe mgr8 yinYing"></div>
@@ -184,7 +208,8 @@
                     <div style="height: 160px" class="baiSe mgt8 yinYing"></div>
                 </div>
             </div>
-            <div style="flex: 1" class="youQu flex column mgr8 mgt8">
+            <!-- 右区 -->
+            <div class="youQu flex column mgr8 mgt8" style="flex: 1">
                 <div style="height: 150px" class="baiSe yinYing"></div>
                 <div style="height: 300px" class="baiSe mgt8 yinYing"></div>
             </div>
@@ -192,7 +217,7 @@
     </div>
 
     <script>
-        // 初始化 Firebase （已填入你的配置）
+        // 初始化 Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyDyhvsQG_UbAcrvFrZKY2iDjI1xs49pw4c",
             authDomain: "zhuce-31afe.firebaseapp.com",
