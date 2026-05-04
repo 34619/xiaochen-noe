@@ -6,11 +6,11 @@
 // ========== 配置部分 ==========
 const CONFIG = {
   // GitHub 配置
-  GITHUB_TOKEN: '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',  // ← 替换为你的 GitHub Personal Access Token
-  GITHUB_OWNER: '34619',                   // ← GitHub 用户名
-  GITHUB_REPO: 'xiaochen-noe',             // ← 仓库名
-  GITHUB_BRANCH: 'main',                   // ← 分支名
-  UPLOAD_DIR: 'avatars',                   // ← 上传目录
+  GITHUB_TOKEN: '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',  // GitHub Personal Access Token
+  GITHUB_OWNER: '34619',                   // GitHub 用户名
+  GITHUB_REPO: 'xiaochen-noe',             // 仓库名
+  GITHUB_BRANCH: 'main',                   // 分支名
+  UPLOAD_DIR: 'avatars',                   // 上传目录
   
   // 允许的来源（CORS）
   ALLOWED_ORIGINS: ['https://34619.github.io', 'http://localhost:3000'],
@@ -30,14 +30,18 @@ export default {
       return handleCORS(request);
     }
 
-    // 路由处理
+    // ��由处理
     if (url.pathname === '/upload-github' && request.method === 'POST') {
       return handleAvatarUpload(request);
     }
 
     if (url.pathname === '/health' && request.method === 'GET') {
       return new Response(JSON.stringify({ status: 'ok' }), {
-        headers: { 'Content-Type': 'application/json' }
+        status: 200,
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        }
       });
     }
 
@@ -50,12 +54,10 @@ export default {
 
 // ========== CORS 处理 ==========
 function handleCORS(request) {
-  const origin = request.headers.get('origin');
-  const isAllowed = CONFIG.ALLOWED_ORIGINS.includes(origin);
-
   return new Response(null, {
+    status: 204,
     headers: {
-      'Access-Control-Allow-Origin': isAllowed ? origin : '*',
+      'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
       'Access-Control-Max-Age': '86400',
@@ -103,6 +105,7 @@ async function handleAvatarUpload(request) {
         'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
         'Content-Type': 'application/json',
         'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'Cloudflare-Worker'
       },
       body: JSON.stringify({
         message: `Upload avatar for user ${uid}`,
@@ -113,10 +116,15 @@ async function handleAvatarUpload(request) {
 
     // 6. 处理 GitHub 响应
     if (!uploadResponse.ok) {
-      const error = await uploadResponse.json();
-      console.error('GitHub API Error:', error);
+      let errorMsg = '上传失败';
+      try {
+        const error = await uploadResponse.json();
+        errorMsg = error.message || error.error || '上传失败';
+      } catch (e) {
+        errorMsg = `HTTP ${uploadResponse.status}`;
+      }
       return createErrorResponse(
-        `GitHub API 错误: ${error.message || '上传失败'}`,
+        `GitHub API 错误: ${errorMsg}`,
         uploadResponse.status
       );
     }
@@ -138,7 +146,7 @@ async function handleAvatarUpload(request) {
   } catch (error) {
     console.error('Upload Error:', error);
     return createErrorResponse(
-      `服务器错误: ${error.message}`,
+      `服务器错误: ${error.message || '未知错误'}`,
       500
     );
   }
@@ -175,7 +183,6 @@ function arrayBufferToBase64(buffer) {
  * 创建成功响应
  */
 function createSuccessResponse(data) {
-  const origin = new URL(arguments.callee.caller.toString()).origin || '*';
   return new Response(JSON.stringify(data), {
     status: 200,
     headers: {
