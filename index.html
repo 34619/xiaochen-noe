@@ -56,9 +56,12 @@
         .container {
             -webkit-box-reflect: below 1px linear-gradient(transparent, rgba(0,0,0,0.2));
         }
-        p {
+
+        /* 标题自适应字号，并保留原有动画 */
+        .site-title {
             color: #fff;
-            font-size: 40px;
+            /* 关键改动：用 clamp 实现自适应 */
+            font-size: clamp(24px, 5vw, 48px);
             letter-spacing: 2px;
             text-transform: uppercase;
             text-align: center;
@@ -126,6 +129,13 @@
             color: #fff;
             margin-left: 10px;
         }
+
+        /* 头部标题容器垂直居中 */
+        .header-title {
+            display: flex;
+            align-items: center;
+            height: 100%;
+        }
     </style>
 </head>
 <body class="flex">
@@ -164,7 +174,10 @@
     <div class="flex1 flex column">
         <!-- 头部栏（透明背景） -->
         <div style="height: 60px;z-index: 1; border-bottom: 1px solid rgba(255,255,255,0.2);" class="baiSe yinYing">
-            <div><p>小陈的个人网站</p></div>
+            <!-- 添加 class="header-title" 实现垂直居中 -->
+            <div class="header-title">
+                <p class="site-title">小陈的个人网站</p>
+            </div>
         </div>
         <!-- 内容区（所有数据块、列表项、右区均透明） -->
         <div style="overflow: auto" class="neiRong flex1 flex">
