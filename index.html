@@ -201,6 +201,11 @@
             align-items: center;
             height: 100%;
         }
+        .info-msg {
+            color: #0066cc;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body class="flex">
@@ -226,6 +231,7 @@
             <h3>个人资料</h3>
             <div id="profileErrorMsg" class="error-msg"></div>
             <div id="profileSuccessMsg" class="success-msg"></div>
+            <div id="profileInfoMsg" class="info-msg"></div>
 
             <!-- 查看模式 -->
             <div id="profileViewMode">
@@ -339,18 +345,83 @@
     </div>
 
     <script>
-        // Firebase 初始化
-        const firebaseConfig = {
-            apiKey: "AIzaSyDyhvsQG_UbAcrvFrZKY2iDjI1xs49pw4c",
-            authDomain: "api.xiaochen.com",   // ← 改成你的 Worker 域名
-            projectId: "zhuce-31afe",
-            storageBucket: "zhuce-31afe.firebasestorage.app",
-            messagingSenderId: "712987001352",
-            appId: "1:712987001352:web:19ac82dcb317dc6daf87bd",
-            measurementId: "G-S95ZVB7YFV"
+        // ========== 配置管理 ==========
+        const CONFIG = {
+            // Worker 域名 - 改成你的实际 Worker 域名
+            workerBase: 'https://api.xiaochen.com',
+            
+            // Firebase 配置
+            firebase: {
+                apiKey: "AIzaSyDyhvsQG_UbAcrvFrZKY2iDjI1xs49pw4c",
+                authDomain: "api.xiaochen.com",
+                projectId: "zhuce-31afe",
+                storageBucket: "zhuce-31afe.firebasestorage.app",
+                messagingSenderId: "712987001352",
+                appId: "1:712987001352:web:19ac82dcb317dc6daf87bd",
+                measurementId: "G-S95ZVB7YFV"
+            }
         };
-        firebase.initializeApp(firebaseConfig);
+
+        // Firebase 初始化
+        firebase.initializeApp(CONFIG.firebase);
         const auth = firebase.auth();
+
+        // ---------- 头像上传函数（改进） ----------
+        async function uploadAvatarToWorker(file, uid) {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('uid', uid);
+
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 15000); // 15秒超时
+
+                const response = await fetch(`${CONFIG.workerBase}/upload-github`, {
+                    method: 'POST',
+                    body: formData,
+                    signal: controller.signal,
+                    mode: 'cors'
+                });
+
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                
+                if (result.success && result.url) {
+                    return { success: true, url: result.url };
+                } else {
+                    return { 
+                        success: false, 
+                        error: result.error || '服务器返回错误'
+                    };
+                }
+            } catch (error) {
+                console.error('头像上传错误:', error);
+                
+                if (error.name === 'AbortError') {
+                    return { 
+                        success: false, 
+                        error: '上传超时，请检查网络和 Worker 地址' 
+                    };
+                }
+                
+                if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+                    return { 
+                        success: false, 
+                        error: `无法连接到 Worker: ${CONFIG.workerBase}<br/>请检查:<br/>1. Worker 域名是否正确<br/>2. Worker 是否已部署<br/>3. 跨域配置是否正确` 
+                    };
+                }
+
+                return { 
+                    success: false, 
+                    error: error.message || '上传过程出错'
+                };
+            }
+        }
 
         // ---------- 登录/注册/找回密码 ----------
         const authModal = document.getElementById('authModal');
@@ -522,6 +593,7 @@
 
         const profileErrorMsg = document.getElementById('profileErrorMsg');
         const profileSuccessMsg = document.getElementById('profileSuccessMsg');
+        const profileInfoMsg = document.getElementById('profileInfoMsg');
 
         function getProfileKey(uid) {
             return 'profile_' + uid;
@@ -571,6 +643,7 @@
             profileEditMode.style.display = 'none';
             profileErrorMsg.textContent = '';
             profileSuccessMsg.textContent = '';
+            profileInfoMsg.textContent = '';
             profileModal.style.display = 'flex';
         }
 
@@ -598,6 +671,7 @@
             profileEditMode.style.display = 'block';
             profileErrorMsg.textContent = '';
             profileSuccessMsg.textContent = '';
+            profileInfoMsg.textContent = '';
         });
 
         avatarFileInput.addEventListener('change', (e) => {
@@ -616,9 +690,10 @@
             profileEditMode.style.display = 'none';
             profileErrorMsg.textContent = '';
             profileSuccessMsg.textContent = '';
+            profileInfoMsg.textContent = '';
         });
 
-        // 头像上传至 GitHub（通过 Worker 中转）
+        // 头像上传至 GitHub（通过 Worker 中转）- 改进版本
         saveProfileBtn.addEventListener('click', async () => {
             const user = auth.currentUser;
             if (!user) return;
@@ -626,35 +701,30 @@
 
             let newPhotoURL = user.photoURL;
             const file = avatarFileInput.files[0];
+            
             if (file) {
                 try {
                     saveProfileBtn.textContent = '上传中...';
                     saveProfileBtn.disabled = true;
+                    profileErrorMsg.textContent = '';
+                    profileSuccessMsg.textContent = '';
+                    profileInfoMsg.textContent = '正在上传到 Worker...';
 
-                    const formData = new FormData();
-                    formData.append('file', file);
-                    formData.append('uid', uid);
+                    const uploadResult = await uploadAvatarToWorker(file, uid);
 
-                    // 使用 Worker 域名（与 authDomain 相同）
-                    const workerBase = 'https://api.xiaochen.com'; // ← 改成你的 Worker 域名
-                    const res = await fetch(`${workerBase}/upload-github`, {
-                        method: 'POST',
-                        body: formData
-                    });
-                    const result = await res.json();
-
-                    if (result.success) {
-                        newPhotoURL = result.url;
+                    if (uploadResult.success) {
+                        newPhotoURL = uploadResult.url;
                         profileSuccessMsg.textContent = '头像上传成功！';
+                        profileInfoMsg.textContent = '';
                     } else {
-                        profileErrorMsg.textContent = '头像上传失败：' + (result.error || '未知错误');
+                        profileErrorMsg.innerHTML = '头像上传失败：' + uploadResult.error;
                         saveProfileBtn.textContent = '保存';
                         saveProfileBtn.disabled = false;
                         return;
                     }
                 } catch (error) {
-                    console.error(error);
-                    profileErrorMsg.textContent = '头像上传网络错误';
+                    console.error('意外错误:', error);
+                    profileErrorMsg.textContent = '头像上传遇到问题：' + error.message;
                     saveProfileBtn.textContent = '保存';
                     saveProfileBtn.disabled = false;
                     return;
