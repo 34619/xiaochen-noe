@@ -173,14 +173,14 @@
             margin-left: 10px;
         }
 
-        /* ========== 手机端响应式：侧边栏变成顶部导航 ========== */
-        @media (max-width: 768px) {
+        /* ========== 手机/平板响应式：侧边栏变成顶部导航（宽度 ≤ 1024px） ========== */
+        @media (max-width: 1024px) {
             body {
                 flex-direction: column;
             }
 
-            /* 侧边栏变为顶部横向导航 */
-            .ceBian {
+            /* 强制侧边栏横向显示 */
+            #sidebar.ceBian {
                 display: flex !important;
                 width: 100% !important;
                 max-width: 100% !important;
@@ -192,32 +192,30 @@
             }
 
             /* 头像区域横排 */
-            .ceBian > .flex {
+            #sidebar .flex {
                 border-bottom: none;
                 margin-right: 10px;
                 flex-shrink: 0;
             }
 
             /* 导航项容器横排 */
-            .ceBian .flex1 {
+            #sidebar .flex1 {
                 display: flex;
                 flex-direction: row;
             }
 
-            /* 每个导航项 */
+            /* 每个导航项：竖线分隔 */
             .daoHang {
                 border-bottom: none;
                 border-right: 1px solid rgba(255, 255, 255, 0.2);
                 padding: 8px 15px;
-                white-space: nowrap;
             }
 
-            /* 最后一个导航项去掉右边框 */
             .daoHang:last-child {
                 border-right: none;
             }
 
-            /* 头部标题变小 */
+            /* 头部标题缩小 */
             p {
                 font-size: 24px !important;
                 letter-spacing: 1px;
@@ -254,11 +252,6 @@
             .left-area {
                 margin-right: 0 !important;
             }
-
-            /* 整体背景固定 */
-            body {
-                background-attachment: fixed;
-            }
         }
     </style>
 </head>
@@ -278,8 +271,9 @@
         </div>
     </div>
 
-    <!-- 侧边栏（电脑端左侧竖排，手机端顶部横排） -->
-    <div class="ceBian baiSe yinYing" style="width: 200px; z-index: 2;">
+    <!-- 侧边栏（电脑端左侧竖排，手机端顶部横排） 
+         关键：添加了 id="sidebar" 用于提高 CSS 权重 -->
+    <div id="sidebar" class="ceBian baiSe yinYing" style="width: 200px; z-index: 2;">
         <!-- 头像区域 -->
         <div style="padding: 10px; align-items: center; justify-content: center; border-bottom: 1px solid rgba(255,255,255,0.2);" class="flex">
             <img id="userAvatar" src="https://s21.ax1x.com/2024/09/17/pAKE9fK.png" width="40px" height="40px" alt="" />
