@@ -7,10 +7,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flex 布局</title>
     <style>
-        *{
-    /* 初始化 */
-    margin: 0;
-    padding: 0;
+        * {
+            /* 初始化 */
+            margin: 0;
+            padding: 0;
         }
         body {
             margin: 0;
@@ -21,12 +21,10 @@
             background: url(https://s21.ax1x.com/2024/09/17/pAKEpY6.jpg);
         }
 
-        /* * {
-            border: 1px solid black;
-        }*/
         .yinYing {
             box-shadow: rgb(0 0 0 / 20%) 0px 2px 1px 1px,
-                rgb(0 0 0 / 14%) 0px 1px 1px 0px, rgb(0 0 0 / 12%) 0px 1px 3px 0px;
+                        rgb(0 0 0 / 14%) 0px 1px 1px 0px, 
+                        rgb(0 0 0 / 12%) 0px 1px 3px 0px;
         }
 
         .flex {
@@ -34,7 +32,7 @@
         }
 
         .baiSe {
-            background-color: ;
+            background-color: #fff;   /* ✅ 修正1：补全颜色值 */
         }
 
         .flex1 {
@@ -69,19 +67,15 @@
             .ceBian {
                 display: none;
             }
-
             .neiRong {
                 flex-direction: column;
             }
-
             .shuJuQu {
                 flex-direction: column;
             }
-
             .youQu {
                 margin-left: 8px;
             }
-
             .shuJu {
                 margin: 0 0 8px;
                 flex: auto;
@@ -91,38 +85,41 @@
         .neiRong::-webkit-scrollbar {
             display: none;
         }
-        .container{
-    /* 投影效果 */
-    -webkit-box-reflect: below 1px linear-gradient(transparent,rgba(0,0,0,0.2));
-}
-p{
-    color: #fff;
-    font-size: 40px;
-    /* 字间距 */
-    letter-spacing: px;
-    /* 转大写 */
-    text-transform: uppercase;
-    text-align: center;
-    line-height: px;
-    outline: none;
-    /* 自定义属性--c，可通过var函数对其调用 */
-    --c:lightseagreen;
-    /* 调用自定义属性--c，设置文字阴影（发光效果） */
-    text-shadow: 0 0 10px var(--c),
-    0 0 20px var(--c),
-    0 0 40px var(--c),
-    0 0 80px var(--c),
-    0 0 160px var(--c);
-    /* 执行动画：动画名 时长 线性的 无限次播放 */
-    animation: animate 5s linear infinite;
-}
-/* 定义动画 */
-@keyframes animate {
-    to{
-        /* 色相旋转滤镜（设置度数可改变颜色） */
-        filter: hue-rotate(360deg);
-    }
-}
+
+        .container {
+            /* 投影效果 */
+            -webkit-box-reflect: below 1px linear-gradient(transparent, rgba(0,0,0,0.2));
+        }
+
+        p {
+            color: #fff;
+            font-size: 40px;
+            /* 字间距 */
+            letter-spacing: 2px;        /* ✅ 修正2：补全数值 */
+            /* 转大写 */
+            text-transform: uppercase;
+            text-align: center;
+            line-height: 1.5;           /* ✅ 修正3：补全数值，可根据需要调整 */
+            outline: none;
+            /* 自定义属性--c，可通过var函数对其调用 */
+            --c: lightseagreen;
+            /* 调用自定义属性--c，设置文字阴影（发光效果） */
+            text-shadow: 0 0 10px var(--c),
+                         0 0 20px var(--c),
+                         0 0 40px var(--c),
+                         0 0 80px var(--c),
+                         0 0 160px var(--c);
+            /* 执行动画：动画名 时长 线性的 无限次播放 */
+            animation: animate 5s linear infinite;
+        }
+
+        /* 定义动画 */
+        @keyframes animate {
+            to {
+                /* 色相旋转滤镜（设置度数可改变颜色） */
+                filter: hue-rotate(360deg);
+            }
+        }
     </style>
 </head>
 
@@ -131,7 +128,7 @@ p{
     <div style="width: 200px;z-index: 2;" class="baiSe yinYing">
         <!-- 头像栏 -->
         <div style="padding: 10px;align-items: center;justify-content: center;border-bottom: 1px solid #999;"
-            class="flex">
+             class="flex">
             <img src="https://s21.ax1x.com/2024/09/17/pAKE9fK.png" width="40px" height="40px" alt="" />
             <div style="margin-left: 10px;">小陈</div>
         </div>
@@ -180,19 +177,17 @@ p{
                     <div style="height: 160px" class="baiSe mgt8 yinYing"></div>
                     <div style="height: 160px" class="baiSe mgt8 yinYing"></div>
                     <div style="height: 160px" class="baiSe mgt8 yinYing"></div>
-
                 </div>
             </div>
             <!-- 右区 -->
-            <div style="flex: 1" class="youQu Flex column mgr8 mgt8">
+            <!-- ✅ 修正4：Flex → flex（类名大小写错误），修正5：mgt8y → mgt8 -->
+            <div style="flex: 1" class="youQu flex column mgr8 mgt8">
                 <!-- 提示区 -->
                 <div style="height: 150px" class="baiSe yinYing"></div>
                 <!-- 消息区 -->
-                <div style="height: 300px" class="baiSe mgt8y yinYing"></div>
+                <div style="height: 300px" class="baiSe mgt8 yinYing"></div>
             </div>
         </div>
     </div>
-
 </body>
-
 </html>
