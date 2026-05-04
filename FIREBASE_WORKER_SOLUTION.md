@@ -1,365 +1,712 @@
-# Firebase Worker 集成完整解决方案
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flex 布局</title>
 
-## 🔴 当前问题分析
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
-### 1. **登录错误**
-```
-FirebaseError: Firebase: Error (auth/invalid-login-credentials)
-```
-**原因**:
-- Firebase authDomain 配置错误（设为 `api.xiaochen.com` 而非实际 Firebase 域名）
-- CORS 阻止跨域请求
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            background-color: #eee;
+            background: url(https://s21.ax1x.com/2024/09/17/pAKEpY6.jpg);
+        }
+        .yinYing {
+            box-shadow: rgb(0 0 0 / 20%) 0px 2px 1px 1px,
+                        rgb(0 0 0 / 14%) 0px 1px 1px 0px, 
+                        rgb(0 0 0 / 12%) 0px 1px 3px 0px;
+        }
+        .flex { display: flex; }
+        .baiSe {
+            background-color: transparent;
+        }
+        .flex1 { flex: 1; }
+        .column { flex-direction: column; }
+        .mg8 { margin: 8px; }
+        .mgr8 { margin-right: 8px; }
+        .mgt8 { margin-top: 8px; }
+        .daoHang {
+            padding: 10px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 14px;
+            color: #fff;
+            background: rgba(0, 0, 0, 0.3);
+            cursor: default;
+        }
+        .daoHang.button-like {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .daoHang.button-like:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        @media (max-width:600px) {
+            .ceBian { display: none; }
+            .neiRong { flex-direction: column; }
+            .shuJuQu { flex-direction: column; }
+            .youQu { margin-left: 8px; }
+            .shuJu { margin: 0 0 8px; flex: auto; }
+        }
+        .neiRong::-webkit-scrollbar { display: none; }
+        .container {
+            -webkit-box-reflect: below 1px linear-gradient(transparent, rgba(0,0,0,0.2));
+        }
 
-### 2. **资料更新失败**
-```
-FirebaseError: Firebase: Photo URL too long. (auth/invalid-profile-attribute)
-```
-**原因**:
-- Worker 返回的 URL 过长
-- Firebase 头像 URL 限制约 2000 字符
+        .site-title {
+            color: #fff;
+            font-size: clamp(24px, 5vw, 48px);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-align: center;
+            line-height: 1.5;
+            outline: none;
+            --c: lightseagreen;
+            text-shadow: 0 0 10px var(--c),
+                         0 0 20px var(--c),
+                         0 0 40px var(--c),
+                         0 0 80px var(--c),
+                         0 0 160px var(--c);
+            animation: animate 5s linear infinite;
+        }
+        @keyframes animate {
+            to { filter: hue-rotate(360deg); }
+        }
 
-### 3. **存储访问被阻止**
-```
-Tracking Prevention blocked access to storage
-```
-**原因**:
-- localStorage/sessionStorage 访问被浏览器隐私保护阻止
-- 需要使用 IndexedDB 或 cookie
+        /* 模态框通用样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 999;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-content h3 { margin-bottom: 20px; }
+        .modal-content input,
+        .modal-content textarea,
+        .modal-content select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+        .modal-content button {
+            width: 100%;
+            padding: 10px;
+            background: lightseagreen;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 6px;
+        }
+        .modal-content button.secondary {
+            background: #666;
+        }
+        .error-msg { color: red; font-size: 13px; margin-bottom: 10px; }
+        .success-msg { color: green; font-size: 13px; margin-bottom: 10px; }
+        .link-text { font-size: 13px; margin-top: 10px; color: #333; cursor: pointer; text-align: center; }
 
----
+        /* 个人资料模态框特有样式 */
+        .profile-view {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .profile-view img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 10px;
+            border: 2px solid lightseagreen;
+        }
+        .profile-field {
+            width: 100%;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .profile-field label {
+            font-weight: bold;
+            min-width: 60px;
+        }
+        .profile-field span, .profile-field input, .profile-field textarea, .profile-field select {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: #f9f9f9;
+        }
+        .profile-field input, .profile-field textarea, .profile-field select {
+            background: white;
+        }
+        .edit-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .edit-controls button {
+            flex: 1;
+        }
+        .avatar-upload {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .avatar-upload img.preview {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid #ccc;
+        }
 
-## ✅ 完整解决方案
+        .user-info-text {
+            color: #fff;
+            margin-left: 10px;
+        }
+        .header-title {
+            display: flex;
+            align-items: center;
+            height: 100%;
+        }
+    </style>
+</head>
+<body class="flex">
 
-### 第一步：修正 Firebase 配置
+    <!-- 登录/注册弹窗 -->
+    <div id="authModal" class="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">登录</h3>
+            <div id="errorMsg" class="error-msg"></div>
+            <div id="successMsg" class="success-msg"></div>
+            <input type="email" id="emailInput" placeholder="邮箱">
+            <input type="password" id="passwordInput" placeholder="密码">
+            <button id="authActionBtn">登录</button>
+            <div class="link-text" id="switchMode">没有账号？立即注册</div>
+            <div class="link-text" id="forgotPasswordLink">忘记密码？</div>
+            <button class="secondary" id="closeModalBtn">关闭</button>
+        </div>
+    </div>
 
-```javascript
-const CONFIG = {
-    // Worker 域名
-    workerBase: 'https://your-worker.com',  // 改成你的实际 Worker 域名
-    
-    // Firebase 配置 - 从 Firebase Console 复制正确的配置
-    firebase: {
-        apiKey: "AIzaSyDyhvsQG_UbAcrvFrZKY2iDjI1xs49pw4c",
-        authDomain: "zhuce-31afe.firebaseapp.com",  // ⭐️ 改为正确的 Firebase 域名
-        projectId: "zhuce-31afe",
-        storageBucket: "zhuce-31afe.firebasestorage.app",
-        messagingSenderId: "712987001352",
-        appId: "1:712987001352:web:19ac82dcb317dc6daf87bd",
-        measurementId: "G-S95ZVB7YFV"
-    }
-};
-```
+    <!-- 个人资料查看/编辑弹窗 -->
+    <div id="profileModal" class="modal">
+        <div class="modal-content">
+            <h3>个人资料</h3>
+            <div id="profileErrorMsg" class="error-msg"></div>
+            <div id="profileSuccessMsg" class="success-msg"></div>
 
-### 第二步：改进头像上传逻辑
+            <!-- 查看模式 -->
+            <div id="profileViewMode">
+                <div class="profile-view">
+                    <img id="profileAvatarView" src="https://s21.ax1x.com/2024/09/17/pAKE9fK.png" alt="头像">
+                    <div id="profileDisplayName" style="font-size:18px; font-weight:bold;">小陈</div>
+                    <div id="profileEmail" style="color:#555;"></div>
+                </div>
+                <div class="profile-field"><label>年龄</label><span id="profileAge">未设置</span></div>
+                <div class="profile-field"><label>性别</label><span id="profileGender">未设置</span></div>
+                <div class="profile-field"><label>简介</label><span id="profileBio">未设置</span></div>
+                <div class="profile-field"><label>兴趣</label><span id="profileInterests">未设置</span></div>
+                <button id="editProfileBtn">编辑资料</button>
+            </div>
 
-在 `uploadAvatarToWorker` 函数中：
+            <!-- 编辑模式（初始隐藏） -->
+            <div id="profileEditMode" style="display:none;">
+                <div class="avatar-upload">
+                    <label>头像</label>
+                    <input type="file" id="avatarFileInput" accept="image/*">
+                </div>
+                <div class="avatar-upload">
+                    <span></span>
+                    <img id="avatarPreview" class="preview" src="https://s21.ax1x.com/2024/09/17/pAKE9fK.png" alt="预览">
+                </div>
+                <div class="profile-field">
+                    <label>昵称</label>
+                    <input type="text" id="displayNameInput" placeholder="输入显示名称">
+                </div>
+                <div class="profile-field">
+                    <label>年龄</label>
+                    <input type="number" id="ageInput" placeholder="年龄" min="1" max="120">
+                </div>
+                <div class="profile-field">
+                    <label>性别</label>
+                    <select id="genderInput">
+                        <option value="">请选择</option>
+                        <option value="男">男</option>
+                        <option value="女">女</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+                <div class="profile-field">
+                    <label>简介</label>
+                    <textarea id="bioInput" placeholder="简单介绍一下自己" rows="3"></textarea>
+                </div>
+                <div class="profile-field">
+                    <label>兴趣</label>
+                    <input type="text" id="interestsInput" placeholder="例如：阅读,旅行,摄影">
+                </div>
+                <div class="edit-controls">
+                    <button id="saveProfileBtn">保存</button>
+                    <button class="secondary" id="cancelEditBtn">取消</button>
+                </div>
+            </div>
 
-```javascript
-async function uploadAvatarToWorker(file, uid) {
-    // ✅ 验证文件大小
-    const MAX_SIZE = 5 * 1024 * 1024; // 5MB
-    if (file.size > MAX_SIZE) {
-        return { 
-            success: false, 
-            error: '文件过大（最大 5MB）'
+            <button class="secondary" id="closeProfileModalBtn" style="margin-top:10px;">关闭</button>
+        </div>
+    </div>
+
+    <!-- 侧边栏 -->
+    <div style="width: 200px;z-index: 2;" class="baiSe yinYing">
+        <div style="padding: 10px;align-items: center;justify-content: center;border-bottom: 1px solid rgba(255,255,255,0.2);" class="flex column">
+            <div class="flex" style="align-items:center; width:100%;">
+                <img id="userAvatar" src="https://s21.ax1x.com/2024/09/17/pAKE9fK.png" width="40px" height="40px" alt="" />
+                <div id="userName" class="user-info-text">小陈</div>
+            </div>
+            <div id="profileBtn" class="daoHang button-like" style="width:100%; text-align:center; border-bottom:none; margin-top:6px; display:none;">
+                个人资料
+            </div>
+        </div>
+        <div class="flex1">
+            <div class="daoHang">导航</div>
+            <div class="daoHang" id="authLink" style="cursor:pointer;">登录 / 注册</div>
+            <div class="daoHang" id="logoutLink" style="display:none; cursor:pointer;">退出登录</div>
+            <div class="daoHang">导航</div>
+            <div class="daoHang">导航</div>
+            <div class="daoHang">导航</div>
+        </div>
+    </div>
+
+    <!-- 主区域 -->
+    <div class="flex1 flex column">
+        <div style="height: 60px;z-index: 1; border-bottom: 1px solid rgba(255,255,255,0.2);" class="baiSe yinYing">
+            <div class="header-title">
+                <p class="site-title">小陈的个人网站</p>
+            </div>
+        </div>
+        <div style="overflow: auto" class="neiRong flex1 flex">
+            <div style="flex: 3" class="flex column mg8">
+                <div class="flex shuJuQu">
+                    <div style="height: 100px" class="shuJu flex1 baiSe mgr8 yinYing"></div>
+                    <div style="height: 100px" class="shuJu flex1 baiSe mgr8 yinYing"></div>
+                    <div style="height: 100px" class="shuJu flex1 baiSe mgr8 yinYing"></div>
+                    <div style="height: 100px" class="shuJu flex1 baiSe yinYing"></div>
+                </div>
+                <div class="flex column">
+                    <div style="height: 160px" class="baiSe mgt8 yinYing"></div>
+                    <div style="height: 160px" class="baiSe mgt8 yinYing"></div>
+                    <div style="height: 160px" class="baiSe mgt8 yinYing"></div>
+                    <div style="height: 160px" class="baiSe mgt8 yinYing"></div>
+                    <div style="height: 160px" class="baiSe mgt8 yinYing"></div>
+                    <div style="height: 160px" class="baiSe mgt8 yinYing"></div>
+                </div>
+            </div>
+            <div style="flex: 1" class="youQu flex column mgr8 mgt8">
+                <div style="height: 150px" class="baiSe yinYing"></div>
+                <div style="height: 300px" class="baiSe mgt8 yinYing"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase 初始化
+        const firebaseConfig = {
+            apiKey: "AIzaSyDyhvsQG_UbAcrvFrZKY2iDjI1xs49pw4c",
+            authDomain: "api.xiaochen.com",   // ← 改成你的 Worker 域名
+            projectId: "zhuce-31afe",
+            storageBucket: "zhuce-31afe.firebasestorage.app",
+            messagingSenderId: "712987001352",
+            appId: "1:712987001352:web:19ac82dcb317dc6daf87bd",
+            measurementId: "G-S95ZVB7YFV"
         };
-    }
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
 
-    // ✅ 验证文件类型
-    if (!file.type.startsWith('image/')) {
-        return { 
-            success: false, 
-            error: '只支持图片格式'
-        };
-    }
+        // ---------- 登录/注册/找回密码 ----------
+        const authModal = document.getElementById('authModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const emailInput = document.getElementById('emailInput');
+        const passwordInput = document.getElementById('passwordInput');
+        const authActionBtn = document.getElementById('authActionBtn');
+        const switchMode = document.getElementById('switchMode');
+        const errorMsg = document.getElementById('errorMsg');
+        const successMsg = document.getElementById('successMsg');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const authLink = document.getElementById('authLink');
+        const logoutLink = document.getElementById('logoutLink');
+        const userNameEl = document.getElementById('userName');
+        const userAvatar = document.getElementById('userAvatar');
+        const forgotPasswordLink = document.getElementById('forgotPasswordLink');
 
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('uid', uid);
+        let currentMode = 'login'; 
 
-    try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时
+        function setMode(mode) {
+            currentMode = mode;
+            errorMsg.textContent = '';
+            successMsg.textContent = '';
+            emailInput.value = '';
+            passwordInput.value = '';
 
-        const response = await fetch(`${CONFIG.workerBase}/upload-github`, {
-            method: 'POST',
-            body: formData,
-            signal: controller.signal,
-            mode: 'cors',
-            credentials: 'include'  // ⭐️ 包含跨域凭证
+            if (mode === 'login') {
+                modalTitle.textContent = '登录';
+                authActionBtn.textContent = '登录';
+                switchMode.textContent = '没有账号？立即注册';
+                switchMode.style.display = 'block';
+                forgotPasswordLink.style.display = 'block';
+                passwordInput.style.display = 'block';
+                passwordInput.placeholder = '密码';
+            } else if (mode === 'register') {
+                modalTitle.textContent = '注册';
+                authActionBtn.textContent = '注册';
+                switchMode.textContent = '已有账号？去登录';
+                switchMode.style.display = 'block';
+                forgotPasswordLink.style.display = 'block';
+                passwordInput.style.display = 'block';
+                passwordInput.placeholder = '密码';
+            } else if (mode === 'reset') {
+                modalTitle.textContent = '找回密码';
+                authActionBtn.textContent = '发送重置邮件';
+                switchMode.textContent = '返回登录';
+                switchMode.style.display = 'block';
+                forgotPasswordLink.style.display = 'none';
+                passwordInput.style.display = 'none';
+            }
+        }
+
+        function showAuthModal() {
+            authModal.style.display = 'flex';
+            setMode('login');
+        }
+        function hideAuthModal() {
+            authModal.style.display = 'none';
+        }
+
+        authLink.addEventListener('click', showAuthModal);
+        closeModalBtn.addEventListener('click', hideAuthModal);
+        authModal.addEventListener('click', (e) => {
+            if (e.target === authModal) hideAuthModal();
         });
 
-        clearTimeout(timeoutId);
-
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const result = await response.json();
-        
-        if (result.success && result.url) {
-            // ✅ 检查 URL 长度
-            if (result.url.length > 2000) {
-                return { 
-                    success: false, 
-                    error: '返回的 URL 过长，无法保存到 Firebase'
-                };
+        switchMode.addEventListener('click', () => {
+            if (currentMode === 'reset') {
+                setMode('login');
+            } else {
+                setMode(currentMode === 'login' ? 'register' : 'login');
             }
-            return { success: true, url: result.url };
-        } else {
-            return { 
-                success: false, 
-                error: result.error || '服务器返回错误'
-            };
-        }
-    } catch (error) {
-        console.error('头像上传错误:', error);
-        
-        if (error.name === 'AbortError') {
-            return { 
-                success: false, 
-                error: '上传超时，请检查网络和 Worker 地址' 
-            };
-        }
-        
-        if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-            return { 
-                success: false, 
-                error: `无法连接到 Worker: ${CONFIG.workerBase}<br/>请检查:<br/>1. Worker 域名是否正确<br/>2. Worker 是否已部署<br/>3. 跨域配置是否正确` 
-            };
-        }
+        });
 
-        return { 
-            success: false, 
-            error: error.message || '上传过程出错'
-        };
-    }
-}
-```
+        forgotPasswordLink.addEventListener('click', () => {
+            setMode('reset');
+        });
 
-### 第三步：修复存储访问问题
+        authActionBtn.addEventListener('click', async () => {
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+            errorMsg.textContent = '';
+            successMsg.textContent = '';
 
-```javascript
-// 使用 IndexedDB 代替 localStorage
-class SecureStorage {
-    constructor() {
-        this.dbName = 'xiaochen-noe-db';
-        this.storeName = 'profiles';
-        this.db = null;
-    }
-
-    async init() {
-        return new Promise((resolve, reject) => {
-            const request = indexedDB.open(this.dbName, 1);
-            
-            request.onerror = () => reject(request.error);
-            request.onsuccess = () => {
-                this.db = request.result;
-                resolve();
-            };
-            
-            request.onupgradeneeded = (e) => {
-                const db = e.target.result;
-                if (!db.objectStoreNames.contains(this.storeName)) {
-                    db.createObjectStore(this.storeName);
+            if (currentMode === 'reset') {
+                if (!email) {
+                    errorMsg.textContent = '请输入邮箱地址';
+                    return;
                 }
-            };
-        });
-    }
-
-    async set(key, value) {
-        if (!this.db) await this.init();
-        return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction([this.storeName], 'readwrite');
-            const store = transaction.objectStore(this.storeName);
-            const request = store.put(value, key);
-            
-            request.onerror = () => reject(request.error);
-            request.onsuccess = () => resolve();
-        });
-    }
-
-    async get(key) {
-        if (!this.db) await this.init();
-        return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction([this.storeName], 'readonly');
-            const store = transaction.objectStore(this.storeName);
-            const request = store.get(key);
-            
-            request.onerror = () => reject(request.error);
-            request.onsuccess = () => resolve(request.result);
-        });
-    }
-}
-
-const storage = new SecureStorage();
-
-// 使用示例
-async function saveExtraProfile(uid, data) {
-    try {
-        await storage.set(`profile_${uid}`, JSON.stringify(data));
-    } catch (error) {
-        console.warn('存储保存失败，使用内存存储', error);
-        // 回退到内存存储
-    }
-}
-
-async function loadExtraProfile(uid) {
-    const defaultProfile = { age: '', gender: '', bio: '', interests: '' };
-    try {
-        const stored = await storage.get(`profile_${uid}`);
-        return stored ? JSON.parse(stored) : defaultProfile;
-    } catch (error) {
-        console.warn('存储读取失败', error);
-        return defaultProfile;
-    }
-}
-```
-
-### 第四步：改进 Firebase 错误处理
-
-```javascript
-authActionBtn.addEventListener('click', async () => {
-    const email = emailInput.value.trim();
-    const password = passwordInput.value;
-    errorMsg.textContent = '';
-    successMsg.textContent = '';
-
-    if (!email || !password) {
-        errorMsg.textContent = '请填写邮箱和密码';
-        return;
-    }
-
-    // ✅ 验证邮箱格式
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-        errorMsg.textContent = '邮箱格式不正确';
-        return;
-    }
-
-    try {
-        authActionBtn.disabled = true;
-        authActionBtn.textContent = currentMode === 'login' ? '登录中...' : '注册中...';
-
-        if (currentMode === 'login') {
-            await auth.signInWithEmailAndPassword(email, password);
-            successMsg.textContent = '登录成功！';
-        } else if (currentMode === 'register') {
-            if (password.length < 6) {
-                throw new Error('密码应至少 6 位');
+                try {
+                    await auth.sendPasswordResetEmail(email);
+                    successMsg.textContent = '重置邮件已发送，请查看邮箱';
+                    setTimeout(() => setMode('login'), 3000);
+                } catch (error) {
+                    console.error(error);
+                    if (error.code === 'auth/user-not-found') {
+                        errorMsg.textContent = '该邮箱未注册';
+                    } else if (error.code === 'auth/invalid-email') {
+                        errorMsg.textContent = '邮箱格式不正确';
+                    } else {
+                        errorMsg.textContent = error.message;
+                    }
+                }
+                return;
             }
-            await auth.createUserWithEmailAndPassword(email, password);
-            successMsg.textContent = '注册成功！';
+
+            if (!email || !password) {
+                errorMsg.textContent = '请填写邮箱和密码';
+                return;
+            }
+
+            try {
+                if (currentMode === 'login') {
+                    await auth.signInWithEmailAndPassword(email, password);
+                    successMsg.textContent = '登录成功！';
+                } else if (currentMode === 'register') {
+                    await auth.createUserWithEmailAndPassword(email, password);
+                    successMsg.textContent = '注册成功！';
+                }
+                setTimeout(hideAuthModal, 800);
+            } catch (error) {
+                console.error(error);
+                if (error.code === 'auth/email-already-in-use') {
+                    errorMsg.textContent = '该邮箱已被注册';
+                } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+                    errorMsg.textContent = '邮箱或密码错误';
+                } else if (error.code === 'auth/weak-password') {
+                    errorMsg.textContent = '密码应至少6位';
+                } else {
+                    errorMsg.textContent = error.message;
+                }
+            }
+        });
+
+        logoutLink.addEventListener('click', async () => {
+            try {
+                await auth.signOut();
+            } catch (error) {
+                console.error('退出失败', error);
+            }
+        });
+
+        // ---------- 个人资料模态框 ----------
+        const profileModal = document.getElementById('profileModal');
+        const profileBtn = document.getElementById('profileBtn');
+        const closeProfileModalBtn = document.getElementById('closeProfileModalBtn');
+
+        const profileViewMode = document.getElementById('profileViewMode');
+        const profileAvatarView = document.getElementById('profileAvatarView');
+        const profileDisplayName = document.getElementById('profileDisplayName');
+        const profileEmail = document.getElementById('profileEmail');
+        const editProfileBtn = document.getElementById('editProfileBtn');
+
+        const profileAge = document.getElementById('profileAge');
+        const profileGender = document.getElementById('profileGender');
+        const profileBio = document.getElementById('profileBio');
+        const profileInterests = document.getElementById('profileInterests');
+
+        const profileEditMode = document.getElementById('profileEditMode');
+        const avatarFileInput = document.getElementById('avatarFileInput');
+        const avatarPreview = document.getElementById('avatarPreview');
+        const displayNameInput = document.getElementById('displayNameInput');
+        const ageInput = document.getElementById('ageInput');
+        const genderInput = document.getElementById('genderInput');
+        const bioInput = document.getElementById('bioInput');
+        const interestsInput = document.getElementById('interestsInput');
+        const saveProfileBtn = document.getElementById('saveProfileBtn');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+
+        const profileErrorMsg = document.getElementById('profileErrorMsg');
+        const profileSuccessMsg = document.getElementById('profileSuccessMsg');
+
+        function getProfileKey(uid) {
+            return 'profile_' + uid;
         }
-        
-        setTimeout(hideAuthModal, 1000);
-    } catch (error) {
-        console.error('认证错误:', error);
-        
-        const errorMap = {
-            'auth/email-already-in-use': '该邮箱已被注册',
-            'auth/user-not-found': '账户不存在',
-            'auth/wrong-password': '密码错误',
-            'auth/invalid-email': '邮箱格式不正确',
-            'auth/weak-password': '密码应至少 6 位',
-            'auth/invalid-login-credentials': '邮箱或密码错误',
-            'auth/network-request-failed': '网络错误，请检查连接',
-            'auth/too-many-requests': '尝试次数过多，请稍后再试'
-        };
-        
-        errorMsg.textContent = errorMap[error.code] || error.message;
-    } finally {
-        authActionBtn.disabled = false;
-        authActionBtn.textContent = currentMode === 'login' ? '登录' : '注册';
-    }
-});
-```
 
-### 第五步：Worker 端 CORS 配置
-
-如果使用 Cloudflare Worker，在 `wrangler.toml` 中配置：
-
-```toml
-[env.production]
-routes = [
-  { pattern = "api.xiaochen.com/*", zone_name = "xiaochen.com" }
-]
-
-# 在 Worker 脚本中处理 CORS
-export default {
-  async fetch(request) {
-    // 处理 CORS 预检请求
-    if (request.method === 'OPTIONS') {
-      return new Response(null, {
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-          'Access-Control-Max-Age': '86400',
+        function loadExtraProfile(uid) {
+            const defaultProfile = { age: '', gender: '', bio: '', interests: '' };
+            try {
+                const stored = localStorage.getItem(getProfileKey(uid));
+                return stored ? JSON.parse(stored) : defaultProfile;
+            } catch (e) {
+                return defaultProfile;
+            }
         }
-      });
-    }
 
-    // 处理实际请求
-    let response;
-    try {
-      response = await handleUpload(request);
-    } catch (error) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: error.message
-      }), { status: 400 });
-    }
+        function saveExtraProfile(uid, data) {
+            localStorage.setItem(getProfileKey(uid), JSON.stringify(data));
+        }
 
-    // 添加 CORS 响应头
-    response.headers.set('Access-Control-Allow-Origin', '*');
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    return response;
-  }
-}
-```
+        function refreshProfileData() {
+            const user = auth.currentUser;
+            if (!user) return;
+            const uid = user.uid;
+            const displayName = user.displayName || user.email.split('@')[0];
+            const photoURL = user.photoURL || 'https://s21.ax1x.com/2024/09/17/pAKE9fK.png';
+            const extra = loadExtraProfile(uid);
 
----
+            profileAvatarView.src = photoURL;
+            profileDisplayName.textContent = displayName;
+            profileEmail.textContent = user.email;
+            profileAge.textContent = extra.age || '未设置';
+            profileGender.textContent = extra.gender || '未设置';
+            profileBio.textContent = extra.bio || '未设置';
+            profileInterests.textContent = extra.interests || '未设置';
 
-## 🧪 测试清单
+            userNameEl.textContent = displayName;
+            userAvatar.src = photoURL;
+        }
 
-- [ ] Firebase 配置中的 `authDomain` 已改为正确的 Firebase 域名
-- [ ] 测试登录功能
-- [ ] 测试注册功能
-- [ ] 测试找回密码功能
-- [ ] 测试头像上传（检查 URL 长度）
-- [ ] 测试资料保存
-- [ ] 测试浏览器隐私模式下的存储
-- [ ] Worker 返回的 URL 不超过 2000 字符
-- [ ] Worker 正确配置了 CORS 响应头
+        function showProfileModal() {
+            if (!auth.currentUser) {
+                alert('请先登录');
+                return;
+            }
+            refreshProfileData();
+            profileViewMode.style.display = 'block';
+            profileEditMode.style.display = 'none';
+            profileErrorMsg.textContent = '';
+            profileSuccessMsg.textContent = '';
+            profileModal.style.display = 'flex';
+        }
 
----
+        function hideProfileModal() {
+            profileModal.style.display = 'none';
+            profileViewMode.style.display = 'block';
+            profileEditMode.style.display = 'none';
+        }
 
-## 🔧 调试步骤
+        editProfileBtn.addEventListener('click', () => {
+            const user = auth.currentUser;
+            if (!user) return;
+            const uid = user.uid;
+            const extra = loadExtraProfile(uid);
 
-1. **打开浏览器开发者工具** (F12)
-2. **查看 Network 标签**：检查所有请求的状态
-3. **查看 Console 标签**：查看完整错误信息
-4. **检查 Storage 标签**：
-   - IndexedDB 中是否有数据
-   - Cookies 是否被正确设置
-5. **测试 Worker 连接**：
-   ```javascript
-   fetch('https://your-worker.com/test')
-     .then(r => r.json())
-     .then(console.log)
-     .catch(console.error);
-   ```
+            displayNameInput.value = user.displayName || '';
+            ageInput.value = extra.age || '';
+            genderInput.value = extra.gender || '';
+            bioInput.value = extra.bio || '';
+            interestsInput.value = extra.interests || '';
+            avatarPreview.src = user.photoURL || 'https://s21.ax1x.com/2024/09/17/pAKE9fK.png';
+            avatarFileInput.value = '';
 
----
+            profileViewMode.style.display = 'none';
+            profileEditMode.style.display = 'block';
+            profileErrorMsg.textContent = '';
+            profileSuccessMsg.textContent = '';
+        });
 
-## 📋 常见错误及解决方案
+        avatarFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    avatarPreview.src = ev.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
 
-| 错误代码 | 原因 | 解决方案 |
-|---------|------|--------|
-| `auth/invalid-login-credentials` | 邮箱或密码错误 | 检查输入，确认账户存在 |
-| `auth/email-already-in-use` | 邮箱已注册 | 使用其他邮箱或登录 |
-| `auth/invalid-profile-attribute` | URL 过长 | 缩短 URL 或使用短链服务 |
-| `auth/network-request-failed` | 网络错误 | 检查网络连接和 CORS 配置 |
-| `Tracking Prevention blocked` | 隐私模式阻止存储 | 使用 IndexedDB 代替 localStorage |
+        cancelEditBtn.addEventListener('click', () => {
+            profileViewMode.style.display = 'block';
+            profileEditMode.style.display = 'none';
+            profileErrorMsg.textContent = '';
+            profileSuccessMsg.textContent = '';
+        });
 
+        // 头像上传至 GitHub（通过 Worker 中转）
+        saveProfileBtn.addEventListener('click', async () => {
+            const user = auth.currentUser;
+            if (!user) return;
+            const uid = user.uid;
+
+            let newPhotoURL = user.photoURL;
+            const file = avatarFileInput.files[0];
+            if (file) {
+                try {
+                    saveProfileBtn.textContent = '上传中...';
+                    saveProfileBtn.disabled = true;
+
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('uid', uid);
+
+                    // 使用 Worker 域名（与 authDomain 相同）
+                    const workerBase = 'https://api.xiaochen.com'; // ← 改成你的 Worker 域名
+                    const res = await fetch(`${workerBase}/upload-github`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const result = await res.json();
+
+                    if (result.success) {
+                        newPhotoURL = result.url;
+                        profileSuccessMsg.textContent = '头像上传成功！';
+                    } else {
+                        profileErrorMsg.textContent = '头像上传失败：' + (result.error || '未知错误');
+                        saveProfileBtn.textContent = '保存';
+                        saveProfileBtn.disabled = false;
+                        return;
+                    }
+                } catch (error) {
+                    console.error(error);
+                    profileErrorMsg.textContent = '头像上传网络错误';
+                    saveProfileBtn.textContent = '保存';
+                    saveProfileBtn.disabled = false;
+                    return;
+                } finally {
+                    saveProfileBtn.textContent = '保存';
+                    saveProfileBtn.disabled = false;
+                }
+            }
+
+            const newDisplayName = displayNameInput.value.trim() || user.displayName;
+            const newAge = ageInput.value.trim();
+            const newGender = genderInput.value;
+            const newBio = bioInput.value.trim();
+            const newInterests = interestsInput.value.trim();
+
+            try {
+                await user.updateProfile({ displayName: newDisplayName, photoURL: newPhotoURL });
+                saveExtraProfile(uid, { age: newAge, gender: newGender, bio: newBio, interests: newInterests });
+                refreshProfileData();
+                profileSuccessMsg.textContent = '资料更新成功！';
+                profileViewMode.style.display = 'block';
+                profileEditMode.style.display = 'none';
+                setTimeout(() => { profileSuccessMsg.textContent = ''; }, 2000);
+            } catch (error) {
+                console.error(error);
+                profileErrorMsg.textContent = '更新资料失败：' + error.message;
+            }
+        });
+
+        profileBtn.addEventListener('click', showProfileModal);
+        closeProfileModalBtn.addEventListener('click', hideProfileModal);
+        profileModal.addEventListener('click', (e) => {
+            if (e.target === profileModal) hideProfileModal();
+        });
+
+        // ---------- 全局用户状态监听 ----------
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                authLink.style.display = 'none';
+                logoutLink.style.display = 'block';
+                profileBtn.style.display = 'block';
+                const displayName = user.displayName || user.email.split('@')[0];
+                userNameEl.textContent = displayName;
+                userAvatar.src = user.photoURL || 'https://s21.ax1x.com/2024/09/17/pAKE9fK.png';
+            } else {
+                authLink.style.display = 'block';
+                logoutLink.style.display = 'none';
+                profileBtn.style.display = 'none';
+                userNameEl.textContent = '小陈';
+                userAvatar.src = 'https://s21.ax1x.com/2024/09/17/pAKE9fK.png';
+            }
+        });
+    </script>
+</body>
+</html>
