@@ -115,6 +115,7 @@
             border: 1px solid #ccc;
             border-radius: 4px;
             font-family: inherit;
+            box-sizing: border-box;
         }
         .modal-content button {
             width: 100%;
@@ -127,11 +128,16 @@
             cursor: pointer;
             margin-top: 6px;
         }
+        .modal-content button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
         .modal-content button.secondary {
             background: #666;
         }
         .error-msg { color: red; font-size: 13px; margin-bottom: 10px; }
         .success-msg { color: green; font-size: 13px; margin-bottom: 10px; }
+        .info-msg { color: #0066cc; font-size: 12px; margin-bottom: 10px; }
         .link-text { font-size: 13px; margin-top: 10px; color: #333; cursor: pointer; text-align: center; }
 
         /* 个人资料模态框特有样式 */
@@ -166,6 +172,7 @@
             border: 1px solid #ccc;
             border-radius: 4px;
             background: #f9f9f9;
+            box-sizing: border-box;
         }
         .profile-field input, .profile-field textarea, .profile-field select {
             background: white;
@@ -200,11 +207,6 @@
             display: flex;
             align-items: center;
             height: 100%;
-        }
-        .info-msg {
-            color: #0066cc;
-            font-size: 12px;
-            margin-bottom: 10px;
         }
     </style>
 </head>
@@ -347,13 +349,15 @@
     <script>
         // ========== 配置管理 ==========
         const CONFIG = {
-            // Worker 域名 - 改成你的实际 Worker 域名
-            workerBase: 'https://xiaochen-noe.xiaochenai3028.workers.dev/',
+            // Worker 域名 - 请根据实际部署修改
+            workerBase: 'https://xiaochen-noe.xiaochenai3028.workers.dev',
             
             // Firebase 配置
             firebase: {
                 apiKey: "AIzaSyDyhvsQG_UbAcrvFrZKY2iDjI1xs49pw4c",
-                authDomain: "https://xiaochen-noe.xiaochenai3028.workers.dev/",
+                // 注意：authDomain 需要在 Firebase 控制台的授权域名中配置
+                // 如果使用 Cloudflare Worker，需要在 Firebase 中添加该域名
+                authDomain: "zhuce-31afe.firebaseapp.com",
                 projectId: "zhuce-31afe",
                 storageBucket: "zhuce-31afe.firebasestorage.app",
                 messagingSenderId: "712987001352",
@@ -366,7 +370,7 @@
         firebase.initializeApp(CONFIG.firebase);
         const auth = firebase.auth();
 
-        // ---------- 头像上传函数（改进） ----------
+        // ---------- 头像上传函数（改进版） ----------
         async function uploadAvatarToWorker(file, uid) {
             const formData = new FormData();
             formData.append('file', file);
