@@ -14,6 +14,7 @@
         * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
         }
         body {
             margin: 0;
@@ -44,10 +45,10 @@
             color: #fff;
             background: rgba(0, 0, 0, 0.3);
             cursor: default;
+            transition: background 0.2s;
         }
         .daoHang.button-like {
             cursor: pointer;
-            transition: background 0.2s;
         }
         .daoHang.button-like:hover {
             background: rgba(255, 255, 255, 0.1);
@@ -115,7 +116,6 @@
             border: 1px solid #ccc;
             border-radius: 4px;
             font-family: inherit;
-            box-sizing: border-box;
         }
         .modal-content button {
             width: 100%;
@@ -127,18 +127,26 @@
             font-size: 16px;
             cursor: pointer;
             margin-top: 6px;
+            transition: background 0.2s;
+        }
+        .modal-content button:hover:not(:disabled) {
+            background: #1a9b8e;
         }
         .modal-content button:disabled {
-            opacity: 0.6;
+            background: #999;
             cursor: not-allowed;
         }
         .modal-content button.secondary {
             background: #666;
         }
+        .modal-content button.secondary:hover:not(:disabled) {
+            background: #555;
+        }
         .error-msg { color: red; font-size: 13px; margin-bottom: 10px; }
         .success-msg { color: green; font-size: 13px; margin-bottom: 10px; }
         .info-msg { color: #0066cc; font-size: 12px; margin-bottom: 10px; }
         .link-text { font-size: 13px; margin-top: 10px; color: #333; cursor: pointer; text-align: center; }
+        .link-text:hover { text-decoration: underline; }
 
         /* 个人资料模态框特有样式 */
         .profile-view {
@@ -172,7 +180,6 @@
             border: 1px solid #ccc;
             border-radius: 4px;
             background: #f9f9f9;
-            box-sizing: border-box;
         }
         .profile-field input, .profile-field textarea, .profile-field select {
             background: white;
@@ -348,15 +355,17 @@
 
     <script>
         // ========== 配置管理 ==========
+        // 重要：请修改以下配置为你的实际值
         const CONFIG = {
-            // Worker 域名 - 请根据实际部署修改
+            // Cloudflare Worker 域名 - 改成你部署的 Worker 域名
+            // 例如：'https://xiaochen-noe.xiaochenai3028.workers.dev'
             workerBase: 'https://xiaochen-noe.xiaochenai3028.workers.dev',
             
-            // Firebase 配置
+            // Firebase 配置 - 来自 Firebase 控制台
             firebase: {
                 apiKey: "AIzaSyDyhvsQG_UbAcrvFrZKY2iDjI1xs49pw4c",
-                // 注意：authDomain 需要在 Firebase 控制台的授权域名中配置
-                // 如果使用 Cloudflare Worker，需要在 Firebase 中添加该域名
+                // 使用标准的 Firebase authDomain，不要用 Worker 域名
+                // 需要在 Firebase 控制台添加你的 Worker 域名到授权域名列表
                 authDomain: "zhuce-31afe.firebaseapp.com",
                 projectId: "zhuce-31afe",
                 storageBucket: "zhuce-31afe.firebasestorage.app",
@@ -409,14 +418,14 @@
                 if (error.name === 'AbortError') {
                     return { 
                         success: false, 
-                        error: '上传超时，请检查网络和 Worker 地址' 
+                        error: '上传超时（15秒），请检查网络和 Worker 地址' 
                     };
                 }
                 
                 if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
                     return { 
                         success: false, 
-                        error: `无法连接到 Worker: ${CONFIG.workerBase}<br/>请检查:<br/>1. Worker 域名是否正确<br/>2. Worker 是否已部署<br/>3. 跨域配置是否正确` 
+                        error: `无法连接到 Worker: ${CONFIG.workerBase}<br/>请检查:<br/>1. Worker 域名是否正确<br/>2. Worker 是否已部署<br/>3. CORS 配置是否正确` 
                     };
                 }
 
@@ -697,7 +706,7 @@
             profileInfoMsg.textContent = '';
         });
 
-        // 头像上传至 GitHub（通过 Worker 中转）- 改进版本
+        // 头像上传至 GitHub（通过 Worker 中转）
         saveProfileBtn.addEventListener('click', async () => {
             const user = auth.currentUser;
             if (!user) return;
